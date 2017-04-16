@@ -1,15 +1,15 @@
 class Memory{
     private static final int memSize = 99;
     
-    private static int startAddr;
-    private static int size;
-    private static boolean occupied;
+    private int startAddr;
+    private int size;
+    private boolean occupied;
     
     protected Memory next;
     protected Memory prev;
     
     
-    public Memory(int []p ,int startAddr, int size, int occupied){
+    public Memory(int startAddr, int size, int occupied){
         this.startAddr = startAddr;
         this.size = size;
         prev = null;
