@@ -21,8 +21,6 @@ class os{
 			case 5:
 				removeProcess(p[1]);
 				break;
-
-
 		}
 	
 	}
