@@ -1,7 +1,7 @@
 import java.util.*;
 class os{
 	static MemoryList lst;
-    
+	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
     
     static void startup(){
         lst = new MemoryList();
@@ -16,6 +16,14 @@ class os{
 	}
 
 	static void Svc(int []a, int []p){
+		System.out.println("Svc");
+		switch (a[0]){
+			case 5:
+				removeProcess(p[1]);
+				break;
+
+
+		}
 	
 	}
 	
