@@ -1,6 +1,6 @@
 import java.util.*;
 class os {
-	static MemoryList lst;
+	static MemoryList memoryList;
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
 	private final int TIME_SLICE = 500;
@@ -8,7 +8,7 @@ class os {
 	int TESTINT = 0;
 
 	static void startup() {
-		lst = new MemoryList();
+		memoryList = new MemoryList();
 	}
 
 	static void Crint(int[] a, int[] p) {
