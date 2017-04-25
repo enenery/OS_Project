@@ -6,6 +6,8 @@ private int jobSize;
 private int maxCPUTime;
 private int submissionTime;
 
+public PCB(){}
+
 public PCB(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime){
     this.jobNumber = jobNumber;
     this.priority = priority;
