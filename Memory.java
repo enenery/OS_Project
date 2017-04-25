@@ -1,36 +1,36 @@
 class Memory{
-    private static final int memSize = 99;
     //Variables
     private int startAddr;
     private int size;
+    private int jobNumber;
     private boolean occupied;
-    protected Memory next;
     
     //Constructors
-    public Memory(int startAddr, int size, boolean occupied){
+    public Memory(int jobNum, int startAddr, int size, boolean occupied){
         this.startAddr = startAddr;
         this.size = size;
-        next = null;
+        this.jobNumber = jobNum;
         this.occupied = occupied;
     }
     public Memory(){
         size = 100;
-        startAddr = -1;
-    	next = null;
+        startAddr = 0;
+        jobNumber = -1;
+        occupied = false;
     }
-    
-    //Methods
-    void split(int size){
-    	this.startAddr = this.startAddr + size;
-    	this.size = this.size - size;
-    }
-    
-    
+ 
     //Setter functions
-    void setNext(Memory mem){
-    	mem.next = this.next;
-    	this.next = mem;
-    	
+    void setStartAddr(int startAddr){
+    	this.startAddr = startAddr;
+    }
+    void setSize(int size){
+    	this.size = size;
+    }
+    void increase(int size){
+    	this.size = this.size + size;
+    }
+    void free(){
+    	this.occupied = false;
     }
     
     //Getter functions
@@ -42,5 +42,8 @@ class Memory{
     }
     public boolean isOccupied(){
         return occupied;
+    }
+    public int getJobNumber(){
+    	return jobNumber;
     }
 }

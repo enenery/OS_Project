@@ -3,7 +3,6 @@ class os{
 	static MemoryList lst;
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
     
-	int TESTINT = 0;
     static void startup(){
         lst = new MemoryList();
 	}
