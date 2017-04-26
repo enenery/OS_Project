@@ -3,9 +3,7 @@ class os {
 	static MemoryList memoryList;
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
-	private final int TIME_SLICE = 500;
-
-	int TESTINT = 0;
+	private static final int TIME_SLICE = 10;
 
 	static void startup() {
 		memoryList = new MemoryList();
@@ -16,7 +14,7 @@ class os {
 		listPCB.add(mPCB);
 
 		//for starting address != -1, place it into memory
-		int startingAddress = MemoryList.add(p[1], p[3]);
+		int startingAddress = memoryList.add(p[1], p[3]);
 		if (startingAddress != -1) {
 			sos.siodrum(p[1], p[3], startingAddress, 0);
 			//create a new ReadyQue and find the right place to store it into listReadyQue
@@ -37,7 +35,6 @@ class os {
 
 		if (!(listReadyQue.isEmpty())) {
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
-			a[0] = 2;
 			p[2] = jobToBeRun.getStartingAddress();
 			p[3] = jobToBeRun.getJobSize();
 			p[4] = TIME_SLICE;
@@ -64,6 +61,9 @@ class os {
 	}
 
 	static void Drmint(int[] a, int[] p) {
+		System.out.print("DRM");
+		a[0] = 2;
+
 	}
 
 	static void removeProcess(int jobNumber) {
