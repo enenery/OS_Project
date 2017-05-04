@@ -10,6 +10,70 @@ class MemoryList{
     }
     
 	/**
+	*Frees a chunk of memory 
+	* @param mem
+	*Memory to be freed
+	*/
+	private void free(Memory mem){
+		mem.free();
+	}
+	
+    /**
+    *Removes all memory chunks with size 0 or less 
+    */
+    private void clean(){
+    	ListIterator<Memory> memIter = memLst.listIterator();
+    	//Start tmp at the first value
+    	Memory tmp = memIter.next();
+    		//loop each value to remove any memory chunks with size 0
+    		while(memIter!=null){
+    			if(tmp.getSize() <= 0){
+    				memLst.remove(tmp);
+    			} 			
+    			try{
+    				tmp = memIter.next();
+    			}
+    			catch(Exception NoSuchElementException){
+    				return;
+    			}
+    		}
+    }
+    
+    /**
+    *Merges any adjacent free Spaces 
+    */
+    private void mergeAdjacent(){
+    	ListIterator<Memory> memIter = memLst.listIterator();
+    	Memory toBeMerged = memIter.next();
+    	boolean merge = false;
+    	boolean toCheckAgain = false;
+    	try{
+    		//loop to see if the current memory chunk and the previous memory chunk can
+    		//be merged and merge them if so
+    		for(Memory tmp = toBeMerged;tmp != null;tmp = memIter.next()){
+    			if(!tmp.isOccupied() && merge){
+    				toBeMerged.increase(tmp.getSize());
+    				memLst.set(memLst.indexOf(toBeMerged), toBeMerged);
+    				memLst.remove(tmp);
+    				merge = false;
+    				toCheckAgain = true;
+    			}else if(!tmp.isOccupied()){
+    				toBeMerged = tmp;
+    				merge = true;
+    			}else{
+    				merge = false;
+    			}
+    		}
+    	}
+    	catch(Exception NoSuchElementException){
+    		//if there was a merge, another merge may be possible
+    		if(toCheckAgain)
+    			mergeAdjacent();
+    		return;
+    	}
+    }
+	
+	/**
 	*Adds a new job into Memory
 	* @param jobNum
 	* number of the Job
@@ -22,7 +86,6 @@ class MemoryList{
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memLst.getFirst();
-    	
     	while(memIter!=null){
     		//We check if there is an unoccupied spot that fits
     		if(!tmp.isOccupied() && tmp.getSize() >= size){
@@ -63,6 +126,7 @@ class MemoryList{
     			//we change the isOccupied flag to false
     			free(tmp);
     			//merge any adjacent free spaces
+    			mergeAdjacent();
     			return;
     		}	
     		try{
@@ -72,53 +136,6 @@ class MemoryList{
     			return;
     		}
     	}
-    }
-    
-    /**
-    *Removes all memory chunks with size 0 or less 
-    */
-    public void clean(){
-    	ListIterator<Memory> memIter = memLst.listIterator();
-    		Memory tmp = memLst.getFirst();
-    			while(memIter!=null){
-    				if(tmp.getSize() <= 0){
-    					memLst.remove(tmp);
-    				} 			
-    				try{
-    					tmp = memIter.next();
-    				}
-    				catch(Exception NoSuchElementException){
-    					return;
-    				}
-    			}
-    }
-    
-    /**
-    *Merges any adjacent free Spaces 
-    */
-    public void mergeAdjacent(){
-    	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memLst.getFirst();
-   		while(memIter!=null){
-   					
-   			try{
-   				tmp = memIter.next();
-   			}
-   			
-   			catch(Exception NoSuchElementException){
-    			return;
-   			}
-   		}
-    }
- 
-    
-    /**
-    *Frees a chunk of memory 
-    * @param mem
-    *Memory to be freed
-    */
-    public void free(Memory mem){
-    	mem.free();
     }
     
     /**
@@ -144,6 +161,7 @@ class MemoryList{
     		}
     	}
     } 
+    
     /**
     *Searches for a job's address
     * @param jobNum
@@ -154,7 +172,9 @@ class MemoryList{
     public int findLocation(int jobNum){
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memLst.getFirst();
+    	//We loop until we get a match or until we check all values
     	while(memIter!=null){
+    		//If there is a match, we return the job number
     		if(tmp.getJobNumber() == jobNum){
     			return tmp.getLocation();
     		}
@@ -165,6 +185,7 @@ class MemoryList{
     			return -1;
     		}
     	}
+    	//If no job number was found, we return -1
 		return -1;
     }
 }
