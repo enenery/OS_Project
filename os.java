@@ -46,6 +46,7 @@ class os {
 		switch (a[0]) {
 			case 5:
 				removeProcess(p[1]);
+				memoryList.remove(p[1]);
 				break;
 		}
 
