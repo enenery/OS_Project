@@ -6,7 +6,7 @@ class os {
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
 
-	private static final int TIME_SLICE = 10;
+	private static final int TIME_SLICE = 5;
 
 
 	static void startup() {
@@ -58,11 +58,16 @@ class os {
 			case 6:
 				System.out.println("\nSvc: a=6");
 				removeReadyJob(p[1]);
+				a[0] = 2;
 				sos.siodisk(p[1]);
 				runReadyJob(a, p);
 				break;
 			case 7:
 				System.out.println("\nSvc: a=7");
+				removeReadyJob(p[1]);
+				a[0] = 1;
+				//sos.siodisk(p[1]);
+				//runReadyJob(a, p);
 				break;
 		}
 
@@ -75,7 +80,7 @@ class os {
 		//otherwise it finished
 	}
 
-	static void Diskint(int[] a, int[] p) {
+	static void Dskint(int[] a, int[] p) {
 		System.out.print("\nDisk");
 	}
 
