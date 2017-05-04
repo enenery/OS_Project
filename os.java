@@ -3,7 +3,7 @@ class os {
 	static MemoryList memoryList;
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
-	private final int TIME_SLICE = 500;
+	private static final int TIME_SLICE = 500;
 
 	int TESTINT = 0;
 
@@ -16,7 +16,7 @@ class os {
 		listPCB.add(mPCB);
 
 		//for starting address != -1, place it into memory
-		int startingAddress = MemoryList.add(p[1], p[3]);
+		int startingAddress = memoryList.add(p[1], p[3]);
 		if (startingAddress != -1) {
 			sos.siodrum(p[1], p[3], startingAddress, 0);
 			//create a new ReadyQue and find the right place to store it into listReadyQue
