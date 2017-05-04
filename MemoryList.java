@@ -53,7 +53,6 @@ class MemoryList{
     		for(Memory tmp = toBeMerged;tmp != null;tmp = memIter.next()){
     			if(!tmp.isOccupied() && merge){
     				toBeMerged.increase(tmp.getSize());
-    				System.out.println(toBeMerged.getSize());
     				memLst.set(memLst.indexOf(toBeMerged), toBeMerged);
     				memLst.remove(tmp);
     				merge = false;
