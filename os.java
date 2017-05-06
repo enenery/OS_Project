@@ -3,19 +3,21 @@ class os {
 	static MemoryList memoryList;
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
+	static int i = 0;
 
 	private static final int TIME_SLICE = 1;
 
 
 	static void startup() {
 		memoryList = new MemoryList();
-		sos.ontrace();
+		//sos.ontrace();
 	}
 
 	static void Crint(int[] a, int[] p) {
-		memoryList.displayContents();
-		System.out.println(p[0]);
-		System.out.print("\nCrint");
+		//memoryList.displayContents();
+		//System.out.println(p[0]);
+		i++;
+		System.out.print("\nCrint" + i + " && a[0] = " + a[0]);
 		PCB mPCB = new PCB(p[1], p[2], p[3], p[4], p[5]);
 		listPCB.add(mPCB);
 
@@ -23,22 +25,31 @@ class os {
 		int startingAddress = memoryList.add(p[1],p[5], p[3]);
 		
 		if (startingAddress != -1) {
+			System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
 			sos.siodrum(p[1], p[3], startingAddress, 0);
+
 			//create a new ReadyQue and find the right place to store it into listReadyQue
 			ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], startingAddress);
 			if (!(listReadyQue.isEmpty())) {
+				System.out.println("\nlistReadyQue not Empty");
 				int i = 0;
 				for (ReadyJob job : listReadyQue) {
 					if (job.getCPUTime() > mReadyJob.getCPUTime()) {
 						listReadyQue.add(i, mReadyJob);
+						printReadyQue();
+						runReadyJob(a, p);
 						return;
 					}
 					i++;
 				}
 				listReadyQue.add(mReadyJob);
-			} else
+				printReadyQue();
+			} else {
+				System.out.println("\nlistReadyQue is Empty");
 				listReadyQue.add(mReadyJob);
+			}
 		}
+
 	}
 
 	static void Svc(int[] a, int[] p) {
@@ -88,14 +99,13 @@ class os {
 	}
 
 	static void Drmint(int[] a, int[] p) {
-		System.out.print("\nDrum" + a[0]);
+		System.out.print("\nDrum" + "a[0] = " + a[0]);
 		if (!(listReadyQue.isEmpty())) {
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
 			p[2] = jobToBeRun.getStartingAddress();
 			p[3] = jobToBeRun.getJobSize();
 			p[4] = TIME_SLICE;
 			a[0] = 2;
-
 		}
 
 	}
@@ -124,12 +134,14 @@ class os {
 
 	static void runReadyJob(int[] a, int[] p){
 		if (!(listReadyQue.isEmpty())) {
-			System.out.println("\nrunning a job from ReadyQue");
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
 			p[2] = jobToBeRun.getStartingAddress();
 			p[3] = jobToBeRun.getJobSize();
 			p[4] = TIME_SLICE;
 			a[0] = 2;
+			System.out.println("\nrunning a job #" + jobToBeRun.getJobNumber() +
+							"\nstartAddress = " + p[2] +
+							"\njobSize = " + p[3]);
 		}else
 			System.out.println("\nEmpty ReadyQue");
 	}
@@ -143,6 +155,15 @@ class os {
 			}
 		}
 		return temp;
+	}
+
+	static void printReadyQue(){
+		System.out.println("ReadyQue has:");
+		ReadyJob temp;
+		for (int i = 0; i < listReadyQue.size(); i++) {
+			temp = listReadyQue.get(i);
+			System.out.print(" " + temp.getJobNumber() + " -> ");
+		}
 	}
 	
 	static public int getTime(int jobNumber,int currTime){
