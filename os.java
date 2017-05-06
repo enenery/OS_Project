@@ -4,7 +4,7 @@ class os {
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
 
-	private static final int TIME_SLICE = 5;
+	private static final int TIME_SLICE = 1;
 
 
 	static void startup() {
@@ -71,13 +71,15 @@ class os {
 	}
 
 	static void Tro(int[] a, int[] p) {
-		System.out.println("Timer Run Out: " + p[1]);
-		if(p[4] <= getTime(p[1],p[5])){
+		System.out.println("Timer Run Out: " + p[1] + " " + p[2] + " " +p[3] + " " +p[4] + " " + p[5] + " " + getTime(p[1],p[5]));
+		if(p[5] == getTime(p[1],p[5])){
 			p[5] = 0;
 			a[0] = 2;
 			return;
-		}
-		else{
+		}else if(p[4] < getTime(p[1],p[5])){
+			a[0] = 1;
+			return;
+		}else{
 			System.out.print(getTime(p[1],p[5]));
 			a[0] = 1;
 			return;
@@ -136,6 +138,6 @@ class os {
 	}
 	
 	static public int getTime(int jobNumber,int currTime){
-		return currTime - memoryList.findStartTime(jobNumber) - 1;
+		return currTime - memoryList.findStartTime(jobNumber) ;
 	}
 }
