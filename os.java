@@ -33,6 +33,7 @@ class os {
 			}
 		}
 		else{
+			listPCB.add(new PCB(p[1], p[2], p[3],p[4],p[5]));
 			p[1] = listReadyQue.getFirst().getJobNumber();
 			runReadyJob(a,p);
 		}
@@ -120,6 +121,17 @@ class os {
 			p[3] = jobToBeRun.getJobSize();
 			p[4] = TIME_SLICE;
 			a[0] = 2;
+		}
+		if(!listPCB.isEmpty()){
+			PCB tmp = listPCB.getFirst();
+			int startingAddress = memoryList.add(tmp.getJobNumber(), tmp.getJobSize());		
+			if (startingAddress != -1) {
+				System.out.print("Drmint PCB" + i + " and startingAddress = " + startingAddress);
+				sos.siodrum(tmp.getJobNumber(), tmp.getJobSize(), startingAddress, 0);
+				}
+			sos.siodrum(tmp.getJobNumber(),tmp.getJobSize() , startingAddress, 0);
+			drumBusy = true;
+			return;
 		}
 	}
 
