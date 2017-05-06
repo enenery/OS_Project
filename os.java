@@ -16,7 +16,6 @@ class os {
 		memoryList.displayContents();
 		System.out.println(p[0]);
 		System.out.print("\nCrint");
-		p[4] = TIME_SLICE;
 		PCB mPCB = new PCB(p[1], p[2], p[3], p[4], p[5]);
 		listPCB.add(mPCB);
 
@@ -48,15 +47,15 @@ class os {
 				System.out.println("\nSvc: a=5");
 				removeProcess(p[1]);
 				memoryList.remove(p[1]);
-				runReadyJob(a, p);
+				removeReadyJob(p[1]);
+				//runReadyJob(a, p);
 				a[0] = 1;
 				break;
 			case 6:
 				System.out.println("\nSvc: a=6");
-				removeReadyJob(p[1]);
 				sos.siodisk(p[1]);
 				a[0] = 2;
-				runReadyJob(a, p);
+				//runReadyJob(a, p);
 				break;
 			case 7:
 				System.out.println("\nSvc: a=7");
@@ -64,26 +63,23 @@ class os {
 				a[0] = 1;
 				if(p[1]==2)
 					a[0]=2;
-				removeReadyJob(p[1]);
 				break;
 		}
 
 	}
 
 	static void Tro(int[] a, int[] p) {
-		System.out.println("Timer Run Out: " + p[1] + " " + p[2] + " " +p[3] + " " +p[4] + " " + p[5] + " " + getTime(p[1],p[5]));
-		if(p[5] == getTime(p[1],p[5])){
-			p[5] = 0;
-			a[0] = 2;
-			return;
-		}else if(p[4] < getTime(p[1],p[5])){
+		System.out.println("\nTRO");
+		ReadyJob mReadyJob = getReadyJob(p[1]);
+		mReadyJob.addUsedCPUTime(TIME_SLICE);
+
+		System.out.println("\nmaxCPUTime = " + mReadyJob.getCPUTime() +
+		"\nusedCPUTime = " + mReadyJob.getUsedCPUTime());
+		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
+			removeReadyJob(p[1]);
 			a[0] = 1;
-			return;
-		}else{
-			System.out.print(getTime(p[1],p[5]));
-			a[0] = 1;
-			return;
-		}
+		}else
+		runReadyJob(a, p);
 		
 	}
 
@@ -99,6 +95,7 @@ class os {
 			p[3] = jobToBeRun.getJobSize();
 			p[4] = TIME_SLICE;
 			a[0] = 2;
+
 		}
 
 	}
@@ -135,6 +132,17 @@ class os {
 			a[0] = 2;
 		}else
 			System.out.println("\nEmpty ReadyQue");
+	}
+
+	static ReadyJob getReadyJob(int jobNumber){
+		ReadyJob temp = new ReadyJob();
+		for (int i = 0; i < listReadyQue.size(); i++) {
+			temp = listReadyQue.get(i);
+			if (temp.getJobNumber() == jobNumber) {
+				return temp;
+			}
+		}
+		return temp;
 	}
 	
 	static public int getTime(int jobNumber,int currTime){
