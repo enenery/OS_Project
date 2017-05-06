@@ -146,7 +146,6 @@ class MemoryList{
     	System.out.println("PRINTING...");
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
-    	tmp = memIter.next();
     	while(memIter!=null){
     		System.out.println("//////////////////////////////");
     		System.out.println("Job: " + tmp.getJobNumber());
