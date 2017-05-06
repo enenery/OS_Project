@@ -10,7 +10,7 @@ class os {
 
 	static void startup() {
 		memoryList = new MemoryList();
-		//sos.ontrace();
+		sos.ontrace();
 	}
 
 	static void Crint(int[] a, int[] p) {
@@ -26,18 +26,22 @@ class os {
 		
 		if (startingAddress != -1) {
 			System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
+			//runReadyJob(a, p);
 			sos.siodrum(p[1], p[3], startingAddress, 0);
 
+
+			/*
 			//create a new ReadyQue and find the right place to store it into listReadyQue
 			ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], startingAddress);
 			if (!(listReadyQue.isEmpty())) {
+				runReadyJob(a, p);
 				System.out.println("\nlistReadyQue not Empty");
 				int i = 0;
 				for (ReadyJob job : listReadyQue) {
 					if (job.getCPUTime() > mReadyJob.getCPUTime()) {
 						listReadyQue.add(i, mReadyJob);
 						printReadyQue();
-						runReadyJob(a, p);
+						//runReadyJob(a, p);
 						return;
 					}
 					i++;
@@ -48,8 +52,9 @@ class os {
 				System.out.println("\nlistReadyQue is Empty");
 				listReadyQue.add(mReadyJob);
 			}
+			*/
 		}
-
+		runReadyJob(a, p);
 	}
 
 	static void Svc(int[] a, int[] p) {
@@ -81,7 +86,7 @@ class os {
 	}
 
 	static void Tro(int[] a, int[] p) {
-		System.out.println("\nTRO");
+		System.out.println("\nTRO: " + "job #" + p[1] + " was running");
 		ReadyJob mReadyJob = getReadyJob(p[1]);
 		mReadyJob.addUsedCPUTime(TIME_SLICE);
 
@@ -102,6 +107,28 @@ class os {
 
 	static void Drmint(int[] a, int[] p) {
 		System.out.print("\nDrum" + "a[0] = " + a[0]);
+
+		ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], memoryList.findLocation(p[1]));
+		if (!(listReadyQue.isEmpty())) {
+			//runReadyJob(a, p);
+			System.out.println("\nlistReadyQue not Empty");
+			int i = 0;
+			for (ReadyJob job : listReadyQue) {
+				if (job.getCPUTime() > mReadyJob.getCPUTime()) {
+					listReadyQue.add(i, mReadyJob);
+					printReadyQue();
+					//runReadyJob(a, p);
+					return;
+				}
+				i++;
+			}
+			listReadyQue.add(mReadyJob);
+			printReadyQue();
+		} else {
+			System.out.println("\nlistReadyQue is Empty");
+			listReadyQue.add(mReadyJob);
+		}
+
 		if (!(listReadyQue.isEmpty())) {
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
 			p[2] = jobToBeRun.getStartingAddress();
