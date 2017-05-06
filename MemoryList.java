@@ -86,7 +86,7 @@ class MemoryList{
     public int add(int jobNum, int size){
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memLst.getFirst();
+    	Memory tmp = memIter.next();
     	while(memIter!=null){
     		//We check if there is an unoccupied spot that fits
     		if(!tmp.isOccupied() && tmp.getSize() >= size){
@@ -120,7 +120,7 @@ class MemoryList{
     public void remove(int jobNum){
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memLst.getFirst();
+    	Memory tmp = memIter.next();
     	while(memIter!=null){
     		//We check if the job number matches
     		if(tmp.getJobNumber() == jobNum){
@@ -145,7 +145,7 @@ class MemoryList{
     public void displayContents(){
     	System.out.println("PRINTING...");
     	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memLst.getFirst();
+    	Memory tmp = memIter.next();
     	tmp = memIter.next();
     	while(memIter!=null){
     		System.out.println("//////////////////////////////");
@@ -172,7 +172,7 @@ class MemoryList{
     */
     public int findLocation(int jobNum){
     	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memLst.getFirst();
+    	Memory tmp = memIter.next();
     	//We loop until we get a match or until we check all values
     	while(memIter!=null){
     		//If there is a match, we return the job number
