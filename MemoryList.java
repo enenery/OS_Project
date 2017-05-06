@@ -3,7 +3,6 @@ import java.util.ListIterator;
 
 class MemoryList{
 	LinkedList<Memory> memLst;
-	
 	public MemoryList(){
 		memLst = new LinkedList<Memory>();
 		memLst.add(new Memory());
@@ -77,12 +76,14 @@ class MemoryList{
 	*Adds a new job into Memory
 	* @param jobNum
 	* number of the Job
+	* @param startTime
+	* time when the job is added
 	* @param size
 	* Size of the Job
 	* @return
 	* The start Address of the job or -1 if job couldn't fit
 	*/
-    public int add(int jobNum, int size){
+    public int add(int jobNum,int startTime, int size){
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memLst.getFirst();
@@ -90,7 +91,7 @@ class MemoryList{
     		//We check if there is an unoccupied spot that fits
     		if(!tmp.isOccupied() && tmp.getSize() >= size){
     			//We add the new Memory into the LinkedList
-    			memLst.add(memLst.indexOf(tmp),new Memory(jobNum,tmp.getLocation(),size,true));
+    			memLst.add(memLst.indexOf(tmp),new Memory(jobNum,tmp.getLocation(),startTime,size,true));
     			//We change the values of the free space 
     			tmp.setSize(tmp.getSize() - size);
     			tmp.setStartAddr(tmp.getLocation() + size);
@@ -176,6 +177,26 @@ class MemoryList{
     	while(memIter!=null){
     		//If there is a match, we return the job number
     		if(tmp.getJobNumber() == jobNum){
+    			return tmp.getLocation();
+    		}
+    		try{
+    			tmp = memIter.next();
+    		}
+    		catch(Exception NoSuchElementException){
+    			return -1;
+    		}
+    	}
+    	//If no job number was found, we return -1
+		return -1;
+    }
+    
+    public int findStartTime(int startTime){
+    	ListIterator<Memory> memIter = memLst.listIterator();
+    	Memory tmp = memLst.getFirst();
+    	//We loop until we get a match or until we check all values
+    	while(memIter!=null){
+    		//If there is a match, we return the job number
+    		if(tmp.getJobNumber() == startTime){
     			return tmp.getLocation();
     		}
     		try{

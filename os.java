@@ -13,12 +13,16 @@ class os {
 	}
 
 	static void Crint(int[] a, int[] p) {
+		memoryList.displayContents();
+		System.out.println(p[0]);
 		System.out.print("\nCrint");
+		p[4] = TIME_SLICE;
 		PCB mPCB = new PCB(p[1], p[2], p[3], p[4], p[5]);
 		listPCB.add(mPCB);
 
 		//for starting address != -1, place it into memory
-		int startingAddress = memoryList.add(p[1], p[3]);
+		int startingAddress = memoryList.add(p[1],p[5], p[3]);
+		
 		if (startingAddress != -1) {
 			sos.siodrum(p[1], p[3], startingAddress, 0);
 			//create a new ReadyQue and find the right place to store it into listReadyQue
@@ -36,13 +40,6 @@ class os {
 			} else
 				listReadyQue.add(mReadyJob);
 		}
-
-		/*if (!(listReadyQue.isEmpty())) {
-			ReadyJob jobToBeRun = listReadyQue.getFirst();
-			p[2] = jobToBeRun.getStartingAddress();
-			p[3] = jobToBeRun.getJobSize();
-			p[4] = TIME_SLICE;
-		}*/
 	}
 
 	static void Svc(int[] a, int[] p) {
@@ -52,6 +49,7 @@ class os {
 				removeProcess(p[1]);
 				memoryList.remove(p[1]);
 				runReadyJob(a, p);
+				a[0] = 1;
 				break;
 			case 6:
 				System.out.println("\nSvc: a=6");
@@ -62,25 +60,37 @@ class os {
 				break;
 			case 7:
 				System.out.println("\nSvc: a=7");
+				System.out.println(a[0]);
 				a[0] = 1;
+				if(p[1]==2)
+					a[0]=2;
+				removeReadyJob(p[1]);
 				break;
 		}
 
 	}
 
 	static void Tro(int[] a, int[] p) {
-		System.out.print("\nTro");
-		//If time > 0
-		//Time slice ran out
-		//otherwise it finished
+		System.out.println("Timer Run Out: " + p[1]);
+		if(p[4] <= getTime(p[1],p[5])){
+			p[5] = 0;
+			a[0] = 2;
+			return;
+		}
+		else{
+			System.out.print(getTime(p[1],p[5]));
+			a[0] = 1;
+			return;
+		}
+		
 	}
 
 	static void Dskint(int[] a, int[] p) {
-		System.out.print("\nDisk");
+		System.out.println("\nDsk" + a[0]);
 	}
 
 	static void Drmint(int[] a, int[] p) {
-		System.out.print("\nDrum");
+		System.out.print("\nDrum" + a[0]);
 		if (!(listReadyQue.isEmpty())) {
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
 			p[2] = jobToBeRun.getStartingAddress();
@@ -123,5 +133,9 @@ class os {
 			a[0] = 2;
 		}else
 			System.out.println("\nEmpty ReadyQue");
+	}
+	
+	static public int getTime(int jobNumber,int currTime){
+		return currTime - memoryList.findStartTime(jobNumber) - 1;
 	}
 }
