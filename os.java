@@ -113,7 +113,6 @@ class os {
 			System.out.println("\nlistReadyQue is Empty");
 			listReadyQue.add(mReadyJob);
 		}
-
 		if (!(listReadyQue.isEmpty())) {
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
 			p[2] = jobToBeRun.getStartingAddress();
