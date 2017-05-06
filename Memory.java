@@ -3,23 +3,23 @@ class Memory{
     private int startAddr;
     private int size;
     private int jobNumber;
-    private int startTime;
     private boolean occupied;
+    private int IO;
     
     //Constructors
-    public Memory(int jobNum, int startAddr,int startTime, int size, boolean occupied){
+    public Memory(int jobNum, int startAddr, int size, boolean occupied){
         this.startAddr = startAddr;
-        this.startTime = 0;
         this.size = size;
         this.jobNumber = jobNum;
         this.occupied = occupied;
+        this.IO = 0;
     }
     public Memory(){
         size = 100;
         startAddr = 0;
-        startTime = 0;
         jobNumber = -1;
         occupied = false;
+        IO = 0;
     }
  
     //Setter functions
@@ -31,6 +31,12 @@ class Memory{
     }
     void increase(int size){
     	this.size = this.size + size;
+    }
+    void incrementIO(){
+    	this.IO++;
+    }
+    void decrementIO(){
+    	this.IO--;
     }
     void free(){
     	this.occupied = false;
@@ -50,7 +56,7 @@ class Memory{
     public int getJobNumber(){
     	return jobNumber;
     }
-    public int getStartTime(){
-    	return startTime;
+    public int needsMoreIO(){
+    	return IO;
     }
 }

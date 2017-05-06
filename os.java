@@ -22,7 +22,7 @@ class os {
 		listPCB.add(mPCB);
 
 		//for starting address != -1, place it into memory
-		int startingAddress = memoryList.add(p[1],p[5], p[3]);
+		int startingAddress = memoryList.add(p[1], p[3]);
 		
 		if (startingAddress != -1) {
 			System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
@@ -65,15 +65,16 @@ class os {
 			case 6:
 				System.out.println("\nSvc: a=6");
 				sos.siodisk(p[1]);
+				memoryList.changeIO(p[1], 1);
 				a[0] = 2;
 				//runReadyJob(a, p);
 				break;
 			case 7:
 				System.out.println("\nSvc: a=7");
 				System.out.println(a[0]);
-				a[0] = 1;
-				if(p[1]==2)
-					a[0]=2;
+				if(memoryList.get(p[1]).needsMoreIO() > 0)
+					a[0]=1;
+				else a[0] = 2;
 				break;
 		}
 
@@ -96,6 +97,7 @@ class os {
 
 	static void Dskint(int[] a, int[] p) {
 		System.out.println("\nDsk" + a[0]);
+		memoryList.changeIO(p[1], 0);
 	}
 
 	static void Drmint(int[] a, int[] p) {
@@ -157,6 +159,7 @@ class os {
 		return temp;
 	}
 
+
 	static void printReadyQue(){
 		System.out.println("ReadyQue has:");
 		ReadyJob temp;
@@ -165,8 +168,5 @@ class os {
 			System.out.print(" " + temp.getJobNumber() + " -> ");
 		}
 	}
-	
-	static public int getTime(int jobNumber,int currTime){
-		return currTime - memoryList.findStartTime(jobNumber) ;
-	}
+
 }
