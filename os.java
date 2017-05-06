@@ -38,6 +38,7 @@ class os {
 						listReadyQue.add(i, mReadyJob);
 						printReadyQue();
 						runReadyJob(a, p);
+						memoryList.displayContents();
 						return;
 					}
 					i++;
@@ -49,7 +50,6 @@ class os {
 				listReadyQue.add(mReadyJob);
 			}
 		}
-
 	}
 
 	static void Svc(int[] a, int[] p) {
@@ -89,6 +89,7 @@ class os {
 		"\nusedCPUTime = " + mReadyJob.getUsedCPUTime());
 		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
 			removeReadyJob(p[1]);
+			memoryList.remove(p[1]);
 			a[0] = 1;
 		}else
 		runReadyJob(a, p);
@@ -102,14 +103,7 @@ class os {
 
 	static void Drmint(int[] a, int[] p) {
 		System.out.print("\nDrum" + "a[0] = " + a[0]);
-		if (!(listReadyQue.isEmpty())) {
-			ReadyJob jobToBeRun = listReadyQue.getFirst();
-			p[2] = jobToBeRun.getStartingAddress();
-			p[3] = jobToBeRun.getJobSize();
-			p[4] = TIME_SLICE;
-			a[0] = 2;
-		}
-
+		runReadyJob(a,p);
 	}
 
 	static void removeProcess(int jobNumber) {
