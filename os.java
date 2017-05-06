@@ -90,30 +90,33 @@ class os {
 
 	static void Drmint(int[] a, int[] p) {
 		drumBusy = false;
-		System.out.print("\nDrum" + "a[0] = " + a[0]);
+		System.out.print("\nDrum: " + "job #" + p[1] + " is done swapping");
 
 		PCB mPCB = getPCB(p[1]);
 		mPCB.placeInMemory();
 
-		ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], memoryList.findLocation(p[1]));
-		if (!(listReadyQue.isEmpty())) {
-			//runReadyJob(a, p);
-			System.out.println("\nlistReadyQue not Empty");
-			int i = 0;
-			for (ReadyJob job : listReadyQue) {
-				if (job.getCPUTime() > mReadyJob.getCPUTime()) {
-					listReadyQue.add(i, mReadyJob);
-					printReadyQue();
-					//runReadyJob(a, p);
-					return;
+		//adds a job to ReadyQue when it is not in it yet
+		if(!inReadyQue(p[1])) {
+			ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], memoryList.findLocation(p[1]));
+			if (!(listReadyQue.isEmpty())) {
+				//runReadyJob(a, p);
+				System.out.println("\nlistReadyQue not Empty");
+				int i = 0;
+				for (ReadyJob job : listReadyQue) {
+					if (job.getCPUTime() > mReadyJob.getCPUTime()) {
+						listReadyQue.add(i, mReadyJob);
+						printReadyQue();
+						//runReadyJob(a, p);
+						return;
+					}
+					i++;
 				}
-				i++;
+				listReadyQue.add(mReadyJob);
+				printReadyQue();
+			} else {
+				System.out.println("\nlistReadyQue is Empty");
+				listReadyQue.add(mReadyJob);
 			}
-			listReadyQue.add(mReadyJob);
-			printReadyQue();
-		} else {
-			System.out.println("\nlistReadyQue is Empty");
-			listReadyQue.add(mReadyJob);
 		}
 		if (!(listReadyQue.isEmpty())) {
 			ReadyJob jobToBeRun = listReadyQue.getFirst();
@@ -193,7 +196,6 @@ class os {
 		return temp;
 	}
 
-
 	static void printReadyQue(){
 		System.out.println("ReadyQue has:");
 		ReadyJob temp;
@@ -201,6 +203,17 @@ class os {
 			temp = listReadyQue.get(i);
 			System.out.print(" " + temp.getJobNumber() + " -> ");
 		}
+	}
+
+	static boolean inReadyQue(int jobNumber){
+		ReadyJob temp;
+		for (int i = 0; i < listReadyQue.size(); i++) {
+			temp = listReadyQue.get(i);
+			if(temp.getJobNumber() == jobNumber)
+				return true;
+		}
+
+		return false;
 	}
 
 }
