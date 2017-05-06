@@ -194,14 +194,15 @@ class MemoryList{
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
     	while(memIter!=null){
+    		
     		if(tmp.getJobNumber() == jobNum){
     			switch(mode){
     			case 0:
     				tmp.decrementIO();
-    				break;
+    				return;
     			case 1:
     				tmp.incrementIO();
-    				break;
+    				return;
     			}
     		}
     		try{
