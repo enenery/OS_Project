@@ -26,7 +26,6 @@ class os {
 		
 		if (startingAddress != -1) {
 			System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
-			//runReadyJob(a, p);
 			sos.siodrum(p[1], p[3], startingAddress, 0);
 
 
@@ -94,6 +93,7 @@ class os {
 		"\nusedCPUTime = " + mReadyJob.getUsedCPUTime());
 		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
 			removeReadyJob(p[1]);
+			memoryList.remove(p[1]);
 			a[0] = 1;
 		}else
 		runReadyJob(a, p);
@@ -107,6 +107,9 @@ class os {
 
 	static void Drmint(int[] a, int[] p) {
 		System.out.print("\nDrum" + "a[0] = " + a[0]);
+
+		PCB mPCB = getPCB(p[1]);
+		mPCB.placeInMemory();
 
 		ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], memoryList.findLocation(p[1]));
 		if (!(listReadyQue.isEmpty())) {
@@ -179,6 +182,17 @@ class os {
 		ReadyJob temp = new ReadyJob();
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
+			if (temp.getJobNumber() == jobNumber) {
+				return temp;
+			}
+		}
+		return temp;
+	}
+
+	static PCB getPCB(int jobNumber){
+		PCB temp = new PCB();
+		for (int i = 0; i < listPCB.size(); i++) {
+			temp = listPCB.get(i);
 			if (temp.getJobNumber() == jobNumber) {
 				return temp;
 			}
