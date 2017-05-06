@@ -23,15 +23,12 @@ class os {
 		listPCB.add(mPCB);
 		if(!drumBusy){
 		//for starting address != -1, place it into memory
-		int startingAddress = memoryList.add(p[1], p[3]);
-		
-		
-			if (startingAddress != -1) {
-				System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
-				//runReadyJob(a, p);
-				sos.siodrum(p[1], p[3], startingAddress, 0);
-				drumBusy = true;
-
+		int startingAddress = memoryList.add(p[1], p[3]);		
+		if (startingAddress != -1) {
+			System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
+			//runReadyJob(a, p);
+			sos.siodrum(p[1], p[3], startingAddress, 0);
+			drumBusy = true;
 			runReadyJob(a, p);
 			}
 		}
@@ -93,6 +90,10 @@ class os {
 	static void Drmint(int[] a, int[] p) {
 		drumBusy = false;
 		System.out.print("\nDrum" + "a[0] = " + a[0]);
+
+		PCB mPCB = getPCB(p[1]);
+		mPCB.placeInMemory();
+
 		ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], memoryList.findLocation(p[1]));
 		if (!(listReadyQue.isEmpty())) {
 			//runReadyJob(a, p);
@@ -162,6 +163,17 @@ class os {
 		ReadyJob temp = new ReadyJob();
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
+			if (temp.getJobNumber() == jobNumber) {
+				return temp;
+			}
+		}
+		return temp;
+	}
+
+	static PCB getPCB(int jobNumber){
+		PCB temp = new PCB();
+		for (int i = 0; i < listPCB.size(); i++) {
+			temp = listPCB.get(i);
 			if (temp.getJobNumber() == jobNumber) {
 				return temp;
 			}
