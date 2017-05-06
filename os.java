@@ -1,12 +1,10 @@
-import com.sun.org.apache.regexp.internal.RE;
-
 import java.util.*;
 class os {
 	static MemoryList memoryList;
 	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
 	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
 
-	private static final int TIME_SLICE = 10;
+	private static final int TIME_SLICE = 5;
 
 
 	static void startup() {
@@ -59,10 +57,12 @@ class os {
 				System.out.println("\nSvc: a=6");
 				removeReadyJob(p[1]);
 				sos.siodisk(p[1]);
+				a[0] = 2;
 				runReadyJob(a, p);
 				break;
 			case 7:
 				System.out.println("\nSvc: a=7");
+				a[0] = 1;
 				break;
 		}
 
@@ -75,7 +75,7 @@ class os {
 		//otherwise it finished
 	}
 
-	static void Diskint(int[] a, int[] p) {
+	static void Dskint(int[] a, int[] p) {
 		System.out.print("\nDisk");
 	}
 
