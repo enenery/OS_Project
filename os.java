@@ -13,7 +13,7 @@ class os {
 		waitingQueue = new LinkedList<ReadyJob>();
 		listReadyQue  = new LinkedList<ReadyJob>();
 		drumBusy = false;
-		sos.ontrace();
+		//sos.ontrace();
 	}
 
 	static void Crint(int[] a, int[] p) {
@@ -25,8 +25,8 @@ class os {
 			int startingAddress = memoryList.add(p[1], p[3]);		
 			if (startingAddress != -1) {
 				sos.siodrum(p[1], p[3], startingAddress, 0);
-				pickJob(a, p);
 				listReadyQue.add(new ReadyJob(p[1],p[2],p[3],p[4],p[5],startingAddress));
+				pickJob(a, p);
 				drumBusy = true;
 			}else{
 				waitingQueue.add(mPCB);
@@ -37,7 +37,7 @@ class os {
 			waitingQueue.add(mPCB);
 			pickJob(a,p);
 		}
-		memoryList.displayContents();
+		printReadyQue();
 	}
 
 	static void Svc(int[] a, int[] p) {
@@ -68,14 +68,10 @@ class os {
 	}
 
 	static void Tro(int[] a, int[] p) {
-		System.out.println("TRO");
 
-		System.out.println("\nTRO: " + "job #" + p[1] + " was running");
 		ReadyJob mReadyJob = getReadyJob(p[1]);
 		mReadyJob.addUsedCPUTime(TIME_SLICE);
 
-		System.out.println("\nmaxCPUTime = " + mReadyJob.getCPUTime() +
-		"\nusedCPUTime = " + mReadyJob.getUsedCPUTime());
 		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
 			removeReadyJob(p[1]);
 			memoryList.remove(p[1]);
@@ -138,16 +134,14 @@ class os {
 			p[3] = jobToBeRun.getSize();
 			p[4] = TIME_SLICE;
 			a[0] = 2;
-			System.out.println("\nrunning a job #" + jobToBeRun.getJobNumber() +
-							"\nstartAddress = " + p[2] +
-							"\njobSize = " + p[3]);
+			
 		}else
 			System.out.println("\nEmpty ReadyQue");
 	}
 	
 	static void pickJob(int [] a, int [] p){
 		ReadyJob jobToBeRun;
-		if(!listReadyQue.isEmpty()){
+		if(listReadyQue.size() > 1){
 			 jobToBeRun = listReadyQue.getFirst();
 			 runReadyJob(jobToBeRun.getJobNumber(),jobToBeRun.getJobSize(),jobToBeRun.getStartingAddress(),a,p);
 		}
@@ -179,7 +173,7 @@ class os {
 	}
 
 	static void printReadyQue(){
-		System.out.println("ReadyQue has:");
+		System.out.println("/////////////////////////////////////////////////////////ReadyQue has:");
 		ReadyJob temp;
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
@@ -197,5 +191,4 @@ class os {
 
 		return false;
 	}
-
 }
