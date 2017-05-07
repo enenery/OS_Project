@@ -228,4 +228,8 @@ class MemoryList{
     	}
 		return null;
     }
+
+	public boolean isEmpty() {
+		return memLst.isEmpty();
+	}
 }

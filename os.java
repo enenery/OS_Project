@@ -1,52 +1,53 @@
 import java.util.*;
 class os {
 	static MemoryList memoryList;
-	private static LinkedList<PCB> listPCB = new LinkedList<PCB>();
-	private static LinkedList<ReadyJob> listReadyQue = new LinkedList<ReadyJob>();
+	private static LinkedList<ReadyJob> waitingQueue;
+	private static LinkedList<ReadyJob> listReadyQue;
 	static int i = 0;
 	static boolean drumBusy;
 
 	private static final int TIME_SLICE = 1;
 
-
 	static void startup() {
 		memoryList = new MemoryList();
+		waitingQueue = new LinkedList<ReadyJob>();
+		listReadyQue  = new LinkedList<ReadyJob>();
+		drumBusy = false;
 		sos.ontrace();
 	}
 
 	static void Crint(int[] a, int[] p) {
-		//memoryList.displayContents();
-		//System.out.println(p[0]);
+		System.out.println("CRINT");
 		i++;
-		System.out.print("\nCrint" + i + " && a[0] = " + a[0]);
-		PCB mPCB = new PCB(p[1], p[2], p[3], p[4], p[5]);
-		listPCB.add(mPCB);
+		ReadyJob mPCB = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
+		
 		if(!drumBusy){
-		//for starting address != -1, place it into memory
-		int startingAddress = memoryList.add(p[1], p[3]);		
-		if (startingAddress != -1) {
-			System.out.print("\nCrint" + i + " and startingAddress = " + startingAddress);
-			//runReadyJob(a, p);
-			sos.siodrum(p[1], p[3], startingAddress, 0);
-			drumBusy = true;
-			runReadyJob(a, p);
+			int startingAddress = memoryList.add(p[1], p[3]);		
+			if (startingAddress != -1) {
+				sos.siodrum(p[1], p[3], startingAddress, 0);
+				pickJob(a, p);
+				listReadyQue.add(new ReadyJob(p[1],p[2],p[3],p[4],p[5],startingAddress));
+				drumBusy = true;
+			}else{
+				waitingQueue.add(mPCB);
+				pickJob(a,p);
 			}
 		}
 		else{
-			listPCB.add(new PCB(p[1], p[2], p[3],p[4],p[5]));
-			p[1] = listReadyQue.getFirst().getJobNumber();
-			runReadyJob(a,p);
+			waitingQueue.add(mPCB);
+			pickJob(a,p);
 		}
+		memoryList.displayContents();
 	}
 
 	static void Svc(int[] a, int[] p) {
+		System.out.println("SVC " + a[0]);
+	
 		switch (a[0]) {
 			case 5:
 				System.out.println("\nSvc: a=5");
-				removeProcess(p[1]);
 				memoryList.remove(p[1]);
 				removeReadyJob(p[1]);
-				//runReadyJob(a, p);
 				a[0] = 1;
 				break;
 			case 6:
@@ -54,13 +55,12 @@ class os {
 				sos.siodisk(p[1]);
 				memoryList.changeIO(p[1], 1);
 				a[0] = 2;
-				//runReadyJob(a, p);
 				break;
 			case 7:
 				System.out.println("\nSvc: a=7");
 				System.out.println(a[0]);
 				if(memoryList.get(p[1]).needsMoreIO() > 0)
-					a[0]=1;
+					 a[0]=1;
 				else a[0] = 2;
 				break;
 		}
@@ -68,6 +68,8 @@ class os {
 	}
 
 	static void Tro(int[] a, int[] p) {
+		System.out.println("TRO");
+
 		System.out.println("\nTRO: " + "job #" + p[1] + " was running");
 		ReadyJob mReadyJob = getReadyJob(p[1]);
 		mReadyJob.addUsedCPUTime(TIME_SLICE);
@@ -78,8 +80,9 @@ class os {
 			removeReadyJob(p[1]);
 			memoryList.remove(p[1]);
 			a[0] = 1;
+			pickJob(a,p);
 		}else
-		runReadyJob(a, p);
+			runReadyJob(a, p);
 		
 	}
 
@@ -89,64 +92,32 @@ class os {
 	}
 
 	static void Drmint(int[] a, int[] p) {
+		System.out.println("DRUMINT");
+
 		drumBusy = false;
-		System.out.print("\nDrum: " + "job #" + p[1] + " is done swapping");
-
-		PCB mPCB = getPCB(p[1]);
-		mPCB.placeInMemory();
-
-		//adds a job to ReadyQue when it is not in it yet
-		if(!inReadyQue(p[1])) {
-			ReadyJob mReadyJob = new ReadyJob(p[1], p[3], p[4], memoryList.findLocation(p[1]));
-			if (!(listReadyQue.isEmpty())) {
-				//runReadyJob(a, p);
-				System.out.println("\nlistReadyQue not Empty");
-				int i = 0;
-				for (ReadyJob job : listReadyQue) {
-					if (job.getCPUTime() > mReadyJob.getCPUTime()) {
-						listReadyQue.add(i, mReadyJob);
-						printReadyQue();
-						//runReadyJob(a, p);
-						return;
+		
+		if(!waitingQueue.isEmpty()){
+			ReadyJob newJob = waitingQueue.pop();
+			ListIterator<ReadyJob> jobIter = waitingQueue.listIterator();
+			
+				try{
+					while(jobIter != null){
+						int startingAddress = memoryList.add(newJob.getJobNumber(), newJob.getJobSize());		
+						if (startingAddress != -1) {
+							sos.siodrum(newJob.getJobNumber(), newJob.getJobSize(), startingAddress, 0);
+							drumBusy = true;
+							break;
+						}else{
+							waitingQueue.add(newJob);
+						}
+						newJob = jobIter.next();
 					}
-					i++;
 				}
-				listReadyQue.add(mReadyJob);
-				printReadyQue();
-			} else {
-				System.out.println("\nlistReadyQue is Empty");
-				listReadyQue.add(mReadyJob);
-			}
-		}
-		if (!(listReadyQue.isEmpty())) {
-			ReadyJob jobToBeRun = listReadyQue.getFirst();
-			p[2] = jobToBeRun.getStartingAddress();
-			p[3] = jobToBeRun.getJobSize();
-			p[4] = TIME_SLICE;
-			a[0] = 2;
-		}
-		if(!listPCB.isEmpty()){
-			PCB tmp = listPCB.getFirst();
-			int startingAddress = memoryList.add(tmp.getJobNumber(), tmp.getJobSize());		
-			if (startingAddress != -1) {
-				System.out.print("Drmint PCB" + i + " and startingAddress = " + startingAddress);
-				sos.siodrum(tmp.getJobNumber(), tmp.getJobSize(), startingAddress, 0);
+				catch(Exception NoSuchElementException){
 				}
-			sos.siodrum(tmp.getJobNumber(),tmp.getJobSize() , startingAddress, 0);
-			drumBusy = true;
-			return;
 		}
-	}
-
-	static void removeProcess(int jobNumber) {
-		for (int i = 0; i < listPCB.size(); i++) {
-			PCB temp = listPCB.get(i);
-			if (temp.getJobNumber() == jobNumber) {
-				System.out.println("\nremoving a process from PCB");
-				listPCB.remove(i);
-				break;
-			}
-		}
+		runReadyJob(a,p);
+		
 	}
 
 	static void removeReadyJob(int jobNumber) {
@@ -162,12 +133,34 @@ class os {
 
 	static void runReadyJob(int[] a, int[] p){
 		if (!(listReadyQue.isEmpty())) {
-			ReadyJob jobToBeRun = listReadyQue.getFirst();
-			p[2] = jobToBeRun.getStartingAddress();
-			p[3] = jobToBeRun.getJobSize();
+			Memory jobToBeRun = memoryList.get(p[1]);
+			p[2] = jobToBeRun.getLocation();
+			p[3] = jobToBeRun.getSize();
 			p[4] = TIME_SLICE;
 			a[0] = 2;
 			System.out.println("\nrunning a job #" + jobToBeRun.getJobNumber() +
+							"\nstartAddress = " + p[2] +
+							"\njobSize = " + p[3]);
+		}else
+			System.out.println("\nEmpty ReadyQue");
+	}
+	
+	static void pickJob(int [] a, int [] p){
+		ReadyJob jobToBeRun;
+		if(!listReadyQue.isEmpty()){
+			 jobToBeRun = listReadyQue.getFirst();
+			 runReadyJob(jobToBeRun.getJobNumber(),jobToBeRun.getJobSize(),jobToBeRun.getStartingAddress(),a,p);
+		}
+		
+	}
+	static void runReadyJob(int jobNum, int size, int startingAddress, int [] a, int [] p){
+		if (!(memoryList.isEmpty())) {
+			p[1] = jobNum;
+			p[2] = startingAddress;
+			p[3] = size;
+			p[4] = TIME_SLICE;
+			a[0] = 2;
+			System.out.println("\nrunning a job #" + jobNum +
 							"\nstartAddress = " + p[2] +
 							"\njobSize = " + p[3]);
 		}else
@@ -178,17 +171,6 @@ class os {
 		ReadyJob temp = new ReadyJob();
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
-			if (temp.getJobNumber() == jobNumber) {
-				return temp;
-			}
-		}
-		return temp;
-	}
-
-	static PCB getPCB(int jobNumber){
-		PCB temp = new PCB();
-		for (int i = 0; i < listPCB.size(); i++) {
-			temp = listPCB.get(i);
 			if (temp.getJobNumber() == jobNumber) {
 				return temp;
 			}
