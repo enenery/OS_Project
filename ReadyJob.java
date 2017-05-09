@@ -55,5 +55,22 @@ public class ReadyJob{
     public void addUsedCPUTime(int usedCPUTime){this.usedCPUTime += usedCPUTime;}
     public void block(){this.blocked = true;}
     public void unblock(){this.blocked = false;}
+    
+    public void displayContents(){
+    	System.out.println("Job Number: " + getJobNumber() + " ////////////////////////////////////");
+    	System.out.println("Job Size: " + getJobSize());
+    	System.out.println("CPU Time: " + getCPUTime());
+    	System.out.println("Job Starting Address: " + getStartingAddress());
+    	if(blocked)
+    		 System.out.println("Blocked");
+    	else System.out.println("Not Blocked");
+    	
+    	System.out.println("//////////////////////////////////////////////////////////////////");
+
+
+
+
+
+    }
 
 }

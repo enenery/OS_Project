@@ -3,10 +3,8 @@ class os {
 	static MemoryList memoryList;
 	private static LinkedList<ReadyJob> waitingQueue;
 	private static LinkedList<ReadyJob> listReadyQue;
-	static int i = 0;
 	static boolean drumBusy;
 	static boolean diskBusy;
-
 	private static final int TIME_SLICE = 1;
 
 	static void startup() {
@@ -15,17 +13,14 @@ class os {
 		listReadyQue  = new LinkedList<ReadyJob>();
 		drumBusy = false;
 		diskBusy = false;
-		//sos.ontrace();
+		sos.ontrace();
 	}
 
 	static void Crint(int[] a, int[] p) {
-		System.out.println("CRINT");
-		i++;
 		ReadyJob mPCB = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
-		
 		if(!drumBusy){
 			int startingAddress = memoryList.add(p[1], p[3]);		
-			if (startingAddress != -1) {
+			if (startingAddress != -1) {				
 				sos.siodrum(p[1], p[3], startingAddress, 0);
 				listReadyQue.add(new ReadyJob(p[1],p[2],p[3],p[4],p[5],startingAddress));
 				pickJob(a, p);
@@ -39,21 +34,18 @@ class os {
 			waitingQueue.add(mPCB);
 			pickJob(a,p);
 		}
-		printReadyQue();
 	}
 
-	static void Svc(int[] a, int[] p) {
-		System.out.println("SVC " + a[0]);
-	
+	static void Svc(int[] a, int[] p) {	
 		switch (a[0]) {
 			case 5:
-				System.out.println("\nSvc: a=5");
 				memoryList.remove(p[1]);
 				removeReadyJob(p[1]);
-				a[0] = 1;
+				if(!oneJobOrLess())
+					pickJob(a,p);
+				else a[0] = 1;
 				break;
 			case 6:
-				System.out.println("\nSvc: a=6");
 				if(!diskBusy){
 					sos.siodisk(p[1]);
 					diskBusy = true;
@@ -65,9 +57,7 @@ class os {
 				memoryList.changeIO(p[1], 1);
 				break;
 			case 7:
-				System.out.println("\nSvc: a=7");
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
-					System.out.println("\nSvc: error");
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
 						a[0] = 1;
@@ -87,7 +77,6 @@ class os {
 	static void Tro(int[] a, int[] p){
 		ReadyJob mReadyJob = getReadyJob(p[1]);
 		mReadyJob.addUsedCPUTime(TIME_SLICE);
-
 		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
 			removeReadyJob(p[1]);
 			memoryList.remove(p[1]);
@@ -95,50 +84,24 @@ class os {
 			pickJob(a,p);
 		}else
 			runReadyJob(a, p);
-		
 	}
 
 	static void Dskint(int[] a, int[] p) {
-		System.out.println("\nDsk" + a[0]);
 		getReadyJob(p[1]).unblock();
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
 	}
 
 	static void Drmint(int[] a, int[] p) {
-		System.out.println("DRUMINT");
-
 		drumBusy = false;
-		
-		if(!waitingQueue.isEmpty()){
-			ReadyJob newJob = waitingQueue.pop();
-			ListIterator<ReadyJob> jobIter = waitingQueue.listIterator();
-			
-				try{
-					while(jobIter != null){
-						int startingAddress = memoryList.add(newJob.getJobNumber(), newJob.getJobSize());		
-						if (startingAddress != -1) {
-							sos.siodrum(newJob.getJobNumber(), newJob.getJobSize(), startingAddress, 0);
-							drumBusy = true;
-							break;
-						}else{
-							waitingQueue.add(newJob);
-						}
-						newJob = jobIter.next();
-					}
-				}
-				catch(Exception NoSuchElementException){
-				}
-		}
+		attemptAdd();
 		runReadyJob(a,p);
-		
 	}
 
 	static void removeReadyJob(int jobNumber) {
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			ReadyJob temp = listReadyQue.get(i);
 			if (temp.getJobNumber() == jobNumber) {
-				System.out.println("\nremoving a job from ReadyQue");
 				listReadyQue.remove(i);
 				break;
 			}
@@ -153,8 +116,28 @@ class os {
 			p[4] = TIME_SLICE;
 			a[0] = 2;
 			
-		}else
-			System.out.println("\nEmpty ReadyQue");
+		}
+	}
+	
+	static void attemptAdd(){
+		if(!waitingQueue.isEmpty() && !drumBusy){
+			ReadyJob newJob = waitingQueue.pop();
+			ListIterator<ReadyJob> jobIter = waitingQueue.listIterator();
+			try{
+				while(jobIter != null){
+					int startingAddress = memoryList.add(newJob.getJobNumber(), newJob.getJobSize());		
+					if (startingAddress != -1) {
+						listReadyQue.add(new ReadyJob(newJob.getJobNumber(),newJob.getPriority(),newJob.getJobSize(),newJob.getCPUTime(),newJob.getSubmissionTime(),startingAddress));
+						sos.siodrum(newJob.getJobNumber(), newJob.getJobSize(), startingAddress, 0);
+						drumBusy = true;
+						break;
+					}else{
+						waitingQueue.add(newJob);
+					}
+					newJob = jobIter.next();
+				}
+			}catch(Exception NoSuchElementException){return;}
+		}
 	}
 	
 	static void pickJob(int [] a, int [] p){
@@ -171,12 +154,14 @@ class os {
 						jobToBeRun = redIter.next();
 					}
 			}
-			catch(Exception NoSuchElementException){	
+			catch(Exception NoSuchElementException){
+				printReadyQue();
 				a[0] = 1;
 				return;
 			}
 		}
 	}
+	
 	static void runReadyJob(int jobNum, int size, int startingAddress, int [] a, int [] p){
 		if (!(memoryList.isEmpty())) {
 			p[1] = jobNum;
@@ -184,11 +169,7 @@ class os {
 			p[3] = size;
 			p[4] = TIME_SLICE;
 			a[0] = 2;
-			System.out.println("\nrunning a job #" + jobNum +
-							"\nstartAddress = " + p[2] +
-							"\njobSize = " + p[3]);
-		}else
-			System.out.println("\nEmpty ReadyQue");
+		}
 	}
 
 	static ReadyJob getReadyJob(int jobNumber){
@@ -206,7 +187,14 @@ class os {
 		ReadyJob temp;
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
-			System.out.print(" " + temp.getJobNumber() + " -> ");
+			temp.displayContents();
+		}
+	}
+	
+	static void printWaitQue(){
+		ReadyJob temp;
+		for (int i = 0; i < waitingQueue.size(); i++) {
+			temp = waitingQueue.get(i);
 		}
 	}
 	
