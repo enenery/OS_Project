@@ -6,6 +6,7 @@ public class ReadyJob{
     private int CPUTime;
     private int startingAddress;
     private int usedCPUTime;
+    private boolean blocked;
 
     public ReadyJob(int jobNumber,int priority, int jobSize, int maxCPUTime,int submissionTime, int startingAddress){
         this.jobNumber = jobNumber;
@@ -15,6 +16,7 @@ public class ReadyJob{
         this.CPUTime = maxCPUTime;
         this.startingAddress = startingAddress;
         this.usedCPUTime = 0;
+        blocked = false;
     }
     
     public ReadyJob(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime){
@@ -23,6 +25,7 @@ public class ReadyJob{
         this.jobSize = jobSize;
         this.CPUTime = maxCPUTime;
         this.submissionTime = submissionTime;
+        blocked = false;
     }
     
     public ReadyJob(){
@@ -40,8 +43,8 @@ public class ReadyJob{
     public int getUsedCPUTime(){return usedCPUTime;}
     public int getPriority(){return priority;}
     public int getSubmissionTime(){return submissionTime;}
-
-
+    public boolean isBlocked(){return blocked;}
+    
     public void setJobNumber(int jobNumber){this.jobNumber = jobNumber;}
     public void setJobSize(int jobSize){this.jobSize = jobSize;}
     public void setCPUTime(int maxCPUTime){this.CPUTime = maxCPUTime;}
@@ -50,6 +53,7 @@ public class ReadyJob{
     public void setPriority(int priority){this.priority = priority;}
     public void setSubmissionTime(int submissionTime){this.submissionTime = submissionTime;}
     public void addUsedCPUTime(int usedCPUTime){this.usedCPUTime += usedCPUTime;}
-
+    public void block(){this.blocked = true;}
+    public void unblock(){this.blocked = false;}
 
 }
