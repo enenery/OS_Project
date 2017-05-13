@@ -76,8 +76,6 @@ class MemoryList{
      *Adds a new job into Memory
      * @param jobNum
      * number of the Job
-     * @param startTime
-     * time when the job is added
      * @param size
      * Size of the Job
      * @return
