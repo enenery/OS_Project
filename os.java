@@ -46,7 +46,9 @@ class os {
 				else a[0] = 1;
 				break;
 			case 6:
+				System.out.print("SVC = 6");
 				if(!diskBusy){
+					System.out.print("Job " + p[1] + " is being put into DISK");
 					sos.siodisk(p[1]);
 					diskBusy = true;
 					a[0] = 2;
@@ -58,6 +60,7 @@ class os {
 				break;
 			case 7:
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
+					System.out.println("Job " + p[1] + " is blocked");
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
 						a[0] = 1;
@@ -66,6 +69,7 @@ class os {
 					pickJob(a,p);
 				}	
 				else{
+					System.out.println("Job " + p[1] + " is unblocked");
 					getReadyJob(p[1]).unblock();
 					runReadyJob(a,p);
 				}
@@ -87,12 +91,14 @@ class os {
 	}
 
 	static void Dskint(int[] a, int[] p) {
+		System.out.println("Job " + p[1] + " called DSKINT");
 		getReadyJob(p[1]).unblock();
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
 	}
 
 	static void Drmint(int[] a, int[] p) {
+		System.out.print("Job " + p[1] + " called DRMINT");
 		drumBusy = false;
 		attemptAdd();
 		runReadyJob(a,p);
@@ -119,7 +125,7 @@ class os {
 		}
 	}
 	
-	static void attemptAdd(){
+	static boolean attemptAdd(){
 		if(!waitingQueue.isEmpty() && !drumBusy){
 			ReadyJob newJob = waitingQueue.pop();
 			ListIterator<ReadyJob> jobIter = waitingQueue.listIterator();
@@ -130,14 +136,15 @@ class os {
 						listReadyQue.add(new ReadyJob(newJob.getJobNumber(),newJob.getPriority(),newJob.getJobSize(),newJob.getCPUTime(),newJob.getSubmissionTime(),startingAddress));
 						sos.siodrum(newJob.getJobNumber(), newJob.getJobSize(), startingAddress, 0);
 						drumBusy = true;
-						break;
+						return true;
 					}else{
 						waitingQueue.add(newJob);
 					}
 					newJob = jobIter.next();
 				}
-			}catch(Exception NoSuchElementException){return;}
+			}catch(Exception NoSuchElementException){return false;}
 		}
+		return false;
 	}
 	
 	static void pickJob(int [] a, int [] p){
