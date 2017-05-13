@@ -83,8 +83,6 @@ class MemoryList{
      *Adds a new job into Memory
      * @param jobNum
      * number of the Job
-     * @param startTime
-     * time when the job is added
      * @param size
      * Size of the Job
      * @return
@@ -200,7 +198,6 @@ class MemoryList{
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
     	while(memIter!=null){
-    		
     		if(tmp.getJobNumber() == jobNum){
     			switch(mode){
                     case 0:
@@ -215,6 +212,7 @@ class MemoryList{
     			tmp = memIter.next();
     		}
     		catch(Exception NoSuchElementException){
+                return;
     		}
     	}
     }
@@ -222,6 +220,7 @@ class MemoryList{
     public Memory get(int jobNum){
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
+
     	while(memIter!=null){
     		if(tmp.getJobNumber() == jobNum){
     			return tmp;

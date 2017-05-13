@@ -8,7 +8,7 @@ public class ReadyJob{
     private int usedCPUTime;
     private boolean blocked;
     private boolean inDrum;
-    
+
     public ReadyJob(int jobNumber,int priority, int jobSize, int maxCPUTime,int submissionTime, int startingAddress){
         this.jobNumber = jobNumber;
         this.jobSize = jobSize;
@@ -59,7 +59,8 @@ public class ReadyJob{
     public void addUsedCPUTime(int usedCPUTime){this.usedCPUTime += usedCPUTime;}
     public void block(){this.blocked = true;}
     public void unblock(){this.blocked = false;}
-    
+
+
     public void setInDrum(){this.inDrum = true;}
     public void outOfDrum(){this.inDrum = false;}
     
@@ -68,6 +69,5 @@ public class ReadyJob{
         System.out.println("Job: " + this.jobNumber);
         System.out.println("Size: " + this.jobSize);
         System.out.println("Blocked " + this.blocked);
-    }
-    
+    }    
 }
