@@ -9,38 +9,38 @@ class MemoryList{
     }
     
 	/**
-	*Frees a chunk of memory 
-	* @param mem
-	*Memory to be freed
-	*/
+     *Frees a chunk of memory
+     * @param mem
+     *Memory to be freed
+     */
 	private void free(Memory mem){
 		mem.free();
 	}
 	
     /**
-    *Removes all memory chunks with size 0 or less 
-    */
+     *Removes all memory chunks with size 0 or less
+     */
     private void clean(){
     	ListIterator<Memory> memIter = memLst.listIterator();
     	//Start tmp at the first value
     	Memory tmp = memIter.next();
-    		//loop each value to remove any memory chunks with size 0
-    		while(memIter!=null){
-    			if(tmp.getSize() <= 0){
-    				memLst.remove(tmp);
-    			} 			
-    			try{
-    				tmp = memIter.next();
-    			}
-    			catch(Exception NoSuchElementException){
-    				return;
-    			}
-    		}
+        //loop each value to remove any memory chunks with size 0
+        while(memIter!=null){
+            if(tmp.getSize() <= 0){
+                memLst.remove(tmp);
+            }
+            try{
+                tmp = memIter.next();
+            }
+            catch(Exception NoSuchElementException){
+                return;
+            }
+        }
     }
     
     /**
-    *Merges any adjacent free Spaces 
-    */
+     *Merges any adjacent free Spaces
+     */
     private void mergeAdjacent(){
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory toBeMerged = memIter.next();
@@ -73,16 +73,16 @@ class MemoryList{
     }
 	
 	/**
-	*Adds a new job into Memory
-	* @param jobNum
-	* number of the Job
-	* @param startTime
-	* time when the job is added
-	* @param size
-	* Size of the Job
-	* @return
-	* The start Address of the job or -1 if job couldn't fit
-	*/
+     *Adds a new job into Memory
+     * @param jobNum
+     * number of the Job
+     * @param startTime
+     * time when the job is added
+     * @param size
+     * Size of the Job
+     * @return
+     * The start Address of the job or -1 if job couldn't fit
+     */
     public int add(int jobNum, int size){
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
@@ -92,13 +92,13 @@ class MemoryList{
     		if(!tmp.isOccupied() && tmp.getSize() >= size){
     			//We add the new Memory into the LinkedList
     			memLst.add(memLst.indexOf(tmp),new Memory(jobNum,tmp.getLocation(),size,true));
-    			//We change the values of the free space 
+    			//We change the values of the free space
     			tmp.setSize(tmp.getSize() - size);
     			tmp.setStartAddr(tmp.getLocation() + size);
     			//We remove any empty memory chunks
-    			clean();  
+    			clean();
     			return tmp.getLocation()-size;
-    		}	
+    		}
     		//We move to the next memory chunk
     		try{
     			tmp = memIter.next();
@@ -112,11 +112,11 @@ class MemoryList{
     }
     
     /**
-    * Frees a chunk of memory and if the next memory is free, merges
-    * both memory chunks 
-    * @param jobNum
-    * The job number of the memory to be freed 
-    */
+     * Frees a chunk of memory and if the next memory is free, merges
+     * both memory chunks
+     * @param jobNum
+     * The job number of the memory to be freed
+     */
     public void remove(int jobNum){
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
@@ -129,7 +129,7 @@ class MemoryList{
     			//merge any adjacent free spaces
     			mergeAdjacent();
     			return;
-    		}	
+    		}
     		try{
     			tmp = memIter.next();
     		}
@@ -140,8 +140,8 @@ class MemoryList{
     }
     
     /**
-    *Displays all contents in the list for debugging only 
-    */
+     *Displays all contents in the list for debugging only
+     */
     public void displayContents(){
     	System.out.println("PRINTING...");
     	ListIterator<Memory> memIter = memLst.listIterator();
@@ -153,22 +153,22 @@ class MemoryList{
     		System.out.println("Start: " + tmp.getLocation());
     		System.out.println("Occupied: " + tmp.isOccupied());
     		System.out.println("//////////////////////////////");
-    		try{ 
+    		try{
     			tmp = memIter.next();
     		}
     		catch(Exception NoSuchElementException){
     			return;
     		}
     	}
-    } 
+    }
     
     /**
-    *Searches for a job's address
-    * @param jobNum
-    * The number of the job
-    * @return
-    * The starting address of the job
-    */
+     *Searches for a job's address
+     * @param jobNum
+     * The number of the job
+     * @return
+     * The starting address of the job
+     */
     public int findLocation(int jobNum){
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
@@ -196,12 +196,12 @@ class MemoryList{
     		
     		if(tmp.getJobNumber() == jobNum){
     			switch(mode){
-    			case 0:
-    				tmp.decrementIO();
-    				return;
-    			case 1:
-    				tmp.incrementIO();
-    				return;
+                    case 0:
+                        tmp.decrementIO();
+                        return;
+                    case 1:
+                        tmp.incrementIO();
+                        return;
     			}
     		}
     		try{
@@ -228,7 +228,7 @@ class MemoryList{
     	}
 		return null;
     }
-
+    
 	public boolean isEmpty() {
 		return memLst.isEmpty();
 	}

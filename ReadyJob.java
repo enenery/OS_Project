@@ -6,9 +6,9 @@ public class ReadyJob{
     private int CPUTime;
     private int startingAddress;
     private int usedCPUTime;
-    private boolean inMem;
     private boolean blocked;
-
+    private boolean inDrum;
+    
     public ReadyJob(int jobNumber,int priority, int jobSize, int maxCPUTime,int submissionTime, int startingAddress){
         this.jobNumber = jobNumber;
         this.jobSize = jobSize;
@@ -18,7 +18,7 @@ public class ReadyJob{
         this.startingAddress = startingAddress;
         this.usedCPUTime = 0;
         blocked = false;
-        inMem = false;
+        inDrum = false;
     }
     
     public ReadyJob(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime){
@@ -28,7 +28,7 @@ public class ReadyJob{
         this.CPUTime = maxCPUTime;
         this.submissionTime = submissionTime;
         blocked = false;
-        inMem = false;
+        inDrum = false;
     }
     
     public ReadyJob(){
@@ -38,7 +38,7 @@ public class ReadyJob{
         this.startingAddress = -1;
         this.usedCPUTime = -1;
     }
-
+    
     public int getJobNumber(){return jobNumber;}
     public int getJobSize(){return jobSize;}
     public int getCPUTime(){return CPUTime;}
@@ -47,7 +47,7 @@ public class ReadyJob{
     public int getPriority(){return priority;}
     public int getSubmissionTime(){return submissionTime;}
     public boolean isBlocked(){return blocked;}
-    public boolean isReady(){return inMem;}
+    public boolean isInDrum(){return inDrum;}
     
     public void setJobNumber(int jobNumber){this.jobNumber = jobNumber;}
     public void setJobSize(int jobSize){this.jobSize = jobSize;}
@@ -59,18 +59,8 @@ public class ReadyJob{
     public void addUsedCPUTime(int usedCPUTime){this.usedCPUTime += usedCPUTime;}
     public void block(){this.blocked = true;}
     public void unblock(){this.blocked = false;}
-    public void isInMemory(){this.inMem = true;};
-    public void outOfMemory(){this.inMem = false;}
     
-    public void displayContents(){
-    	System.out.println("Job Number: " + getJobNumber() + " ////////////////////////////////////");
-    	System.out.println("Job Size: " + getJobSize());
-    	System.out.println("CPU Time: " + getCPUTime());
-    	System.out.println("Job Starting Address: " + getStartingAddress());
-    	if(blocked)
-    		 System.out.println("Blocked");
-    	else System.out.println("Not Blocked");
-    	System.out.println("//////////////////////////////////////////////////////////////////");
-    }
-
+    public void setInDrum(){this.inDrum = true;}
+    public void outOfDrum(){this.inDrum = false;}
+    
 }

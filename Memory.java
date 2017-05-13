@@ -21,7 +21,7 @@ class Memory{
         occupied = false;
         IO = 0;
     }
- 
+    
     //Setter functions
     void setStartAddr(int startAddr){
     	this.startAddr = startAddr;
