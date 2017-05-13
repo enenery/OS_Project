@@ -38,7 +38,7 @@ public class ReadyJob{
         this.startingAddress = -1;
         this.usedCPUTime = -1;
     }
-
+    
     public int getJobNumber(){return jobNumber;}
     public int getJobSize(){return jobSize;}
     public int getCPUTime(){return CPUTime;}
@@ -60,7 +60,9 @@ public class ReadyJob{
     public void block(){this.blocked = true;}
     public void unblock(){this.blocked = false;}
 
+
     public void setInDrum(){this.inDrum = true;}
     public void outOfDrum(){this.inDrum = false;}
+
 
 }

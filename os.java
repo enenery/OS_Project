@@ -12,9 +12,10 @@ class os {
 	static boolean drumBusy;
 	static boolean diskBusy;
 	static int jobToBeInDrum = -1;
+    static int jobToBeInIO = -1;
 
 	private static final int TIME_SLICE = 1;
-
+    
 	static void startup() {
 		memoryList = new MemoryList();
 		waitingQueue = new LinkedList<ReadyJob>();
@@ -23,7 +24,6 @@ class os {
 		diskBusy = false;
 		sos.ontrace();
 	}
-
 	/**
 	 * if drum is not busy, we will add it to memoryList and call siodrum for sos to place it in its memory
 	 * @param a
@@ -39,7 +39,12 @@ class os {
 			if (startingAddress != -1) {
 				sos.siodrum(p[1], p[3], startingAddress, 0);
 				addToReadyQueue(new ReadyJob(p[1], p[2],
+
 						p[3], p[4], p[5], startingAddress));
+
+                                             p[3], p[4],
+                                             p[5], startingAddress);
+
 				System.out.println("\njob #" + p[1] + " is added to ReadyQue with starting address at " +  startingAddress);
 				jobToBeInDrum = p[1];
 				drumBusy = true;
@@ -50,11 +55,12 @@ class os {
 			System.out.println("\nDRUM IS BUSY");
 			waitingQueue.add(mPCB);
 		}
-			printReadyQue();
-			printWaitQue();
-			setAJobToRun(a, p);
-	}
 
+        printReadyQue();
+        printWaitQue();
+        setAJobToRun(a, p);
+	}
+    
 	static void Svc(int[] a, int[] p) {
 
 		switch (a[0]) {
@@ -69,6 +75,7 @@ class os {
 				//System.out.println("\nSvc: a=6");
 				if(!diskBusy){
 					sos.siodisk(p[1]);
+                    jobToBeInIO = p[1];
 					diskBusy = true;
 					a[0] = 2;
 				}
@@ -92,14 +99,14 @@ class os {
 				}
 				break;
 		}
-
+        
 	}
-
+    
 	static void Tro(int[] a, int[] p){
 		//System.out.print("\ntro");
 		ReadyJob mReadyJob = getReadyJob(p[1]);
 		mReadyJob.addUsedCPUTime(TIME_SLICE);
-
+        
 		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
 			removeReadyJob(p[1]);
 			memoryList.remove(p[1]);
@@ -110,10 +117,10 @@ class os {
 			setAJobToRun(a, p);
 
 	}
-
+    
 	static void Dskint(int[] a, int[] p) {
 		System.out.println("\nDsk" + a[0]);
-		getReadyJob(p[1]).unblock();
+		getReadyJob(jobToBeInIO).unblock();
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
 	}
@@ -156,6 +163,35 @@ class os {
 			}
 		}
 
+
+        
+		if(jobToBeInDrum != -1) {
+			getReadyJob(jobToBeInDrum).setInDrum();
+		}
+        
+		if(!waitingQueue.isEmpty()) {
+			ReadyJob waitingJob = waitingQueue.get(0);
+			int startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+			int i = 1;
+            
+			while(i < waitingQueue.size() && startAddress == -1){
+				waitingJob = waitingQueue.get(i);
+				startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+				i++;
+			}
+            
+			if (startAddress != -1) {
+				removeWaitJob(waitingJob.getJobNumber());
+				System.out.println("\nDRUMINT: job #" + waitingJob.getJobNumber() + " swap completed.");
+				addToReadyQueue(new ReadyJob(waitingJob.getJobNumber(), waitingJob.getPriority(),
+                                             waitingJob.getJobSize(), waitingJob.getCPUTime(), waitingJob.getSubmissionTime(), startAddress));
+				System.out.println("\njob #" + waitingJob.getJobNumber() + " is added to ReadyQue with starting address at " + startAddress);
+				sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 0);
+				jobToBeInDrum = waitingJob.getJobNumber();
+				drumBusy = true;
+			}
+		}
+
 		printReadyQue();
 		printWaitQue();
 		setAJobToRun(a, p);
@@ -170,9 +206,12 @@ class os {
 			}
 		}
 
+
 		printReadyQue();
 		printWaitQue();
 	}
+
+
 
 	static void setAJobToRun(int [] a, int[] p) {
 		if (!listReadyQue.isEmpty()) {
@@ -181,7 +220,7 @@ class os {
 				ReadyJob jobToBeRun = listReadyQue.get(i);
 				if (!jobToBeRun.isBlocked() && jobToBeRun.isInDrum()) {
 					//System.out.println("\nWe are going to run a job #" + p[1] +
-							//"\nstartAddress = " + p[2] + "\njobSize = " + p[3]);
+
 					runReadyJob(jobToBeRun.getJobNumber(), jobToBeRun.getJobSize(), jobToBeRun.getStartingAddress(), a, p);
 					return;
 				} else {
@@ -200,13 +239,11 @@ class os {
 			p[3] = size;
 			p[4] = TIME_SLICE;
 			a[0] = 2;
-			//System.out.println("\n We'll be running a job #" + p[1] +
-					//"\nstartAddress = " + p[2] +
-					//"\njobSize = " + p[3]);
+
 		}else
 			System.out.println("\nEmpty ReadyQue");
 	}
-
+    
 	static ReadyJob getReadyJob(int jobNumber){
 		ReadyJob temp = new ReadyJob();
 		for (int i = 0; i < listReadyQue.size(); i++) {
@@ -217,7 +254,7 @@ class os {
 		}
 		return temp;
 	}
-
+    
 	static void printReadyQue(){
 		System.out.print("\nReadyQue has:");
 		ReadyJob temp;
@@ -252,6 +289,7 @@ class os {
 		}
 		return false;
 	}
+
 
 	static boolean inWaitQue(int jobNumber){
 		ReadyJob temp;
