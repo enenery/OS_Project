@@ -63,4 +63,11 @@ public class ReadyJob{
     public void setInDrum(){this.inDrum = true;}
     public void outOfDrum(){this.inDrum = false;}
     
+    public void displayContents(){
+        System.out.println("/////////////////////////////////////////////////");
+        System.out.println("Job: " + this.jobNumber);
+        System.out.println("Size: " + this.jobSize);
+        System.out.println("Blocked " + this.blocked);
+    }
+    
 }
