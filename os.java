@@ -21,7 +21,7 @@ class os {
 		listReadyQue  = new LinkedList<ReadyJob>();
 		drumBusy = false;
 		diskBusy = false;
-		//sos.ontrace();
+		sos.ontrace();
 	}
 
 	/**
