@@ -55,6 +55,7 @@ class os {
 						if (startAddress != -1) {
 							sendAJobToDrum(waitingJob);
 							setAJobToRun(a, p);
+							addToWaitingQueue(mPCB);
 							return;
 						} else {
 							jobToBeSwappedIn = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
@@ -62,13 +63,14 @@ class os {
 
 							if (toBeSwappedOut != null) {
 								sendAJobToSwapOut(toBeSwappedOut);
+								addToWaitingQueue(mPCB);
 							} else
 								i++;
 						}
 					}
 						if(waitingQueue.size() == i)
 							addToWaitingQueue(mPCB);
-				
+
 			}else
 				{
 
@@ -125,7 +127,7 @@ class os {
 				break;
 			case 7:
                 //getReadyJob(p[1]).displayContents();
-                System.out.println(memoryList.get(p[1]).needsMoreIO());
+                //System.out.println(memoryList.get(p[1]).needsMoreIO());
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
@@ -159,7 +161,6 @@ class os {
 	}
     
 	static void Dskint(int[] a, int[] p) {
-		System.out.println("\nDsk" + p[1]);
 		getReadyJob(jobToBeInIO).unblock();
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
@@ -241,6 +242,7 @@ class os {
 
 		printReadyQue();
 		printWaitQue();
+		memoryList.displayContents();
 	}
 
 
