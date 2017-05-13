@@ -1,5 +1,4 @@
 import java.util.*;
-// ToDo 1)find out what we are doing to make job #5 blocked in os though it is unblocked in sos
 // ToDo  2) add swap-out feature to swap a maxCPUTIme of a job in core is larger with
 // ToDo     the waiting job with a smaller maxCPUTime
 
@@ -8,21 +7,21 @@ class os {
 	static MemoryList memoryList;
 	private static LinkedList<ReadyJob> waitingQueue;
 	private static LinkedList<ReadyJob> listReadyQue;
-	static int i = 0;
+    private static LinkedList<ReadyJob> IOWaitQueue;
+	private static final int TIME_SLICE = 1;
 	static boolean drumBusy;
 	static boolean diskBusy;
 	static int jobToBeInDrum = -1;
     static int jobToBeInIO = -1;
     
-	private static final int TIME_SLICE = 1;
-    
 	static void startup() {
 		memoryList = new MemoryList();
 		waitingQueue = new LinkedList<ReadyJob>();
 		listReadyQue  = new LinkedList<ReadyJob>();
+        IOWaitQueue = new LinkedList<ReadyJob>();
 		drumBusy = false;
 		diskBusy = false;
-		//sos.ontrace();
+		sos.ontrace();
 	}
     
 	/**
@@ -58,15 +57,14 @@ class os {
 	}
     
 	static void Svc(int[] a, int[] p) {
-        
 		switch (a[0]) {
 			case 5:
-				//System.out.println("\nSvc: a=5");
-				memoryList.remove(p[1]);
-				removeReadyJob(p[1]);
-				a[0] = 1;
-				setAJobToRun(a, p);
-				break;
+                memoryList.remove(p[1]);
+                removeReadyJob(p[1]);
+                a[0] = 1;
+                setAJobToRun(a, p);
+                lookForIO();
+                break;
 			case 6:
 				//System.out.println("\nSvc: a=6");
 				if(!diskBusy){
@@ -76,11 +74,14 @@ class os {
 					a[0] = 2;
 				}
 				else{
+                    IOWaitQueue.add(getReadyJob(p[1]));
 					setAJobToRun(a,p);
 				}
 				memoryList.changeIO(p[1], 1);
 				break;
 			case 7:
+                getReadyJob(p[1]).displayContents();
+                System.out.println(memoryList.get(p[1]).needsMoreIO());
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
@@ -107,7 +108,6 @@ class os {
 			removeReadyJob(p[1]);
 			memoryList.remove(p[1]);
 			a[0] = 1;
-			//pickJob(a,p);
 			setAJobToRun(a, p);
 		}else
 			setAJobToRun(a, p);
@@ -115,7 +115,7 @@ class os {
 	}
     
 	static void Dskint(int[] a, int[] p) {
-		System.out.println("\nDsk" + a[0]);
+		System.out.println("\nDsk" + p[1]);
 		getReadyJob(jobToBeInIO).unblock();
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
@@ -149,7 +149,8 @@ class os {
 				removeWaitJob(waitingJob.getJobNumber());
 				System.out.println("\nDRUMINT: job #" + waitingJob.getJobNumber() + " swap completed.");
 				addToReadyQueue(new ReadyJob(waitingJob.getJobNumber(), waitingJob.getPriority(),
-                                             waitingJob.getJobSize(), waitingJob.getCPUTime(), waitingJob.getSubmissionTime(), startAddress));
+                                             waitingJob.getJobSize(), waitingJob.getCPUTime(),
+                                             waitingJob.getSubmissionTime(), startAddress));
 				System.out.println("\njob #" + waitingJob.getJobNumber() + " is added to ReadyQue with starting address at " + startAddress);
 				sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 0);
 				jobToBeInDrum = waitingJob.getJobNumber();
@@ -161,7 +162,22 @@ class os {
 		printWaitQue();
 		setAJobToRun(a, p);
 	}
-	static void removeReadyJob(int jobNumber) {
+    
+    
+    //ListReadyQueue Functions///
+	static void addToReadyQueue(ReadyJob readyJob){
+		int i = 0;
+		while(i < listReadyQue.size()){
+			if(listReadyQue.get(i).getCPUTime() > readyJob.getCPUTime()) {
+				listReadyQue.add(i, readyJob);
+				return;
+			}
+			i++;
+		}
+		listReadyQue.add(readyJob);
+	}
+	   
+    static void removeReadyJob(int jobNumber) {
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			ReadyJob temp = listReadyQue.get(i);
 			if (temp.getJobNumber() == jobNumber) {
@@ -170,7 +186,6 @@ class os {
 				break;
 			}
 		}
-        
 		printReadyQue();
 		printWaitQue();
 	}
@@ -219,24 +234,6 @@ class os {
 		return temp;
 	}
     
-	static void printReadyQue(){
-		System.out.print("\nReadyQue has:");
-		ReadyJob temp;
-		for (int i = 0; i < listReadyQue.size(); i++) {
-			temp = listReadyQue.get(i);
-			System.out.print(" " + temp.getJobNumber() + " -> ");
-		}
-	}
-    
-	static void printWaitQue(){
-		System.out.print("\nWaitQue has:");
-		ReadyJob temp;
-		for (int i = 0; i < waitingQueue.size(); i++) {
-			temp = waitingQueue.get(i);
-			System.out.print(" " + temp.getJobNumber() + " -> ");
-		}
-	}
-    
 	static boolean oneJobOrLess(){
 		if(listReadyQue.size() < 2)
 			return true;
@@ -244,6 +241,7 @@ class os {
 			return false;
 	}
     
+    //
 	static boolean inReadyQue(int jobNumber){
 		ReadyJob temp;
 		for (int i = 0; i < listReadyQue.size(); i++) {
@@ -264,17 +262,6 @@ class os {
 		return false;
 	}
     
-	static void addToReadyQueue(ReadyJob readyJob){
-		int i = 0;
-		while(i < listReadyQue.size()){
-			if(listReadyQue.get(i).getCPUTime() > readyJob.getCPUTime()) {
-				listReadyQue.add(i, readyJob);
-				return;
-			}
-			i++;
-		}
-		listReadyQue.add(readyJob);
-	}
     
 	static void removeWaitJob(int jobNumber){
 		int i = 0;
@@ -287,4 +274,39 @@ class os {
 		}
         
 	}
+    
+    static void lookForIO(){
+        if(!IOWaitQueue.isEmpty() && !diskBusy){
+            ReadyJob mJob = IOWaitQueue.pop();
+            sos.siodisk(mJob.getJobNumber());
+            diskBusy = true;
+        }
+    
+    }
+    //Printer Functions///
+	static void printReadyQue(){
+		System.out.print("\nReadyQue has:");
+		ReadyJob temp;
+		for (int i = 0; i < listReadyQue.size(); i++) {
+			temp = listReadyQue.get(i);
+			System.out.print(" " + temp.getJobNumber() + " -> ");
+		}
+	}
+    
+	static void printWaitQue(){
+		System.out.print("\nWaitQue has:");
+		ReadyJob temp;
+		for (int i = 0; i < waitingQueue.size(); i++) {
+			temp = waitingQueue.get(i);
+			System.out.print(" " + temp.getJobNumber() + " -> ");
+		}
+	}
+    
+    static boolean canFit(int size, int jobNum){
+        MemoryList tmp = new MemoryList(memoryList);
+        tmp.remove(jobNum);
+        if(tmp.add(-1,size) != -1 )
+            return true;
+        else return false;
+    }
 }

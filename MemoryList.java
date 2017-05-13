@@ -8,6 +8,13 @@ class MemoryList{
 		memLst.add(new Memory());
     }
     
+    public MemoryList(MemoryList old){
+        this.memLst = null;
+        for(int i = 0; i < old.memLst.size(); i++){
+            this.memLst.add(old.get(i));
+        }
+    }
+    
 	/**
      *Frees a chunk of memory
      * @param mem
