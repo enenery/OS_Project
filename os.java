@@ -130,6 +130,7 @@ class os {
 
 		if(jobToBeInDrum != -1) {
 			ReadyJob swappedIn = getReadyJob(jobToBeInDrum);
+			swappedIn.setInDrum();
 			System.out.println("\nDRUMINT: job #" + swappedIn.getJobNumber() + " swap completed.");
 		}
 
