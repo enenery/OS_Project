@@ -33,33 +33,35 @@ class os {
 		ReadyJob mPCB = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 
 		if (!drumBusy) {
-			System.out.println("\nDRUM IS NOT BUSY");
+			//System.out.println("\nDRUM IS NOT BUSY");
 			int startingAddress = memoryList.add(p[1], p[3]);
 			if (startingAddress != -1) {
 				sos.siodrum(p[1], p[3], startingAddress, 0);
 				drumBusy = true;
 			}
 		}
-			System.out.println("\nDRUM IS BUSY");
 			waitingQueue.add(mPCB);
+
+
 			printReadyQue();
 			printWaitQue();
 			setAJobToRun(a, p);
 	}
 
 	static void Svc(int[] a, int[] p) {
-		System.out.println("SVC " + a[0]);
-	
+
 		switch (a[0]) {
 			case 5:
-				//System.out.println("\nSvc: a=5");
+				memoryList.displayContents();
 				memoryList.remove(p[1]);
+				System.out.println("\n after removing ");
+				memoryList.displayContents();
 				removeReadyJob(p[1]);
+				addToWaitJobToMemory();
 				a[0] = 1;
 				setAJobToRun(a, p);
 				break;
 			case 6:
-				//System.out.println("\nSvc: a=6");
 				if(!diskBusy){
 					sos.siodisk(p[1]);
 					diskBusy = true;
@@ -68,9 +70,12 @@ class os {
 				else{
 					setAJobToRun(a,p);
 				}
+				System.out.print("\nI/O request for job #" + p[1]);
 				memoryList.changeIO(p[1], 1);
 				break;
+
 			case 7:
+				System.out.println("\nBlock request for job #" + p[1] );
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
@@ -97,7 +102,6 @@ class os {
 			removeReadyJob(p[1]);
 			memoryList.remove(p[1]);
 			a[0] = 1;
-			//pickJob(a,p);
 			setAJobToRun(a, p);
 		}else
 			setAJobToRun(a, p);
@@ -105,45 +109,72 @@ class os {
 	}
 
 	static void Dskint(int[] a, int[] p) {
-		System.out.println("\nDsk" + a[0]);
+		System.out.println("\nDsk I/O Completed for job #" + p[1]);
 		getReadyJob(p[1]).unblock();
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
 	}
 
 	/**
-	 * When called, find the newly swapped-in job in the waitingQue, remove it and add to the readyQueue; otherwise, just add it
-	 * If there are more jobs in the waitingQue, pick the first node and try to place it in memory
+	 * When called, find the newly swapped-in job in the waitingQue that fits in memory and is unblocked,
+	 * remove it and add to the readyQueue; otherwise, just add it
+	 * If there are more jobs in the waitingQue, find one that fits and unblocked to place it in memory
 	 * @param a
 	 * @param p
 	 */
 	static void Drmint(int[] a, int[] p){
 		drumBusy = false;
 
-		ReadyJob waitingJob = waitingQueue.get(0);
-		int startAddress = memoryList.findLocation(waitingJob.getJobNumber());
-
-		if(startAddress != -1 && !waitingJob.isBlocked()) {
-			removeWaitJob(waitingJob.getJobNumber());
-			System.out.println("\nDRUMINT: job #" + waitingJob.getJobNumber() + " swap completed.");
-			addToReadyQueue(new ReadyJob(waitingJob.getJobNumber(), waitingJob.getPriority(),
-					waitingJob.getJobSize(), waitingJob.getCPUTime(), waitingJob.getSubmissionTime(), startAddress));
-			System.out.println("\njob #" + waitingJob.getJobNumber() + " is added to ReadyQue with starting address at " +  startAddress);
-		}else{
-			if(waitingJob.isBlocked() && startAddress != -1)
-				sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 1);
-
-		}
-
 		if(!waitingQueue.isEmpty()) {
-			ReadyJob waitedJob = waitingQueue.get(i);
-			int startingAddress = memoryList.add(waitedJob.getJobNumber(), waitedJob.getJobSize());
-			if (startingAddress != -1) {
-				sos.siodrum(waitedJob.getJobNumber(), waitedJob.getJobSize(), startingAddress, 0);
-				drumBusy = true;
+			ReadyJob waitingJob = waitingQueue.get(0);
+			int startAddress = memoryList.findLocation(waitingJob.getJobNumber());
+
+			if (startAddress != -1) {
+				removeWaitJob(waitingJob.getJobNumber());
+				System.out.println("\nDRUMINT1: job #" + waitingJob.getJobNumber() + " swap completed.");
+				addToReadyQueue(new ReadyJob(waitingJob.getJobNumber(), waitingJob.getPriority(),
+						waitingJob.getJobSize(), waitingJob.getCPUTime(), waitingJob.getSubmissionTime(), startAddress));
+				System.out.println("\njob #" + waitingJob.getJobNumber() + " is added to ReadyQue with starting address at " + startAddress);
+			} else {
+				int i = 1;
+
+				while (i < waitingQueue.size() && startAddress == -1) {
+					waitingJob = waitingQueue.get(i);
+					startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+					i++;
+				}
+
+				if (startAddress != -1) {
+					System.out.println("\nDRUMINT2: job #" + waitingJob.getJobNumber() + " swap completed.");
+					sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 0);
+					drumBusy = true;
+				}
 			}
 		}
 
+			/*
+			if (!waitingQueue.isEmpty()) {
+				waitingJob = waitingQueue.get(0);
+				startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+				i = 1;
+				while (i < waitingQueue.size() && (startAddress == -1 || waitingJob.isBlocked())) {
+					waitingJob = waitingQueue.get(i);
+					startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+					i++;
+				}
+
+				if (startAddress != -1) {
+					sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 0);
+					drumBusy = true;
+				}
+			}
+		}
+		else{
+			System.out.println("\nDRUMINT: job #" + p[1] + " swap completed.");
+			addToReadyQueue(new ReadyJob(p[1], p[2],
+					p[3], p[4], p[5]));
+			System.out.println("\njob #" + p[1] + " is added to ReadyQue with starting address at " + memoryList.findLocation(p[1]));
+		}*/
 		printReadyQue();
 		printWaitQue();
 		setAJobToRun(a, p);
@@ -272,6 +303,37 @@ class os {
 			}
 			i++;
 		}
+	}
 
+	static void addToWaitJobToMemory() {
+		System.out.print("\naddWaitJobToMemory");
+
+		if (!drumBusy && !waitingQueue.isEmpty()) {
+
+			ReadyJob waitingJob = waitingQueue.get(0);
+			int startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+
+			int i = 1;
+			while (i < waitingQueue.size() && startAddress == -1 ){
+				waitingJob = waitingQueue.get(i);
+				startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+				i++;
+			}
+
+			if (startAddress != -1) {
+				System.out.print("Calling sos.siodrum for job #" + waitingJob.getJobNumber());
+				sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 0);
+				drumBusy = true;
+			}
+			else{
+				System.out.print(" job #" + waitingJob.getJobNumber() + " doesn't fit in memory");
+			}
+
+		}else{
+			if(drumBusy)
+				System.out.print(" drumBusy");
+			else
+				System.out.print(" Empty waitinQueue");
+		}
 	}
 }
