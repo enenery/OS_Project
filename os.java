@@ -56,7 +56,6 @@ class os {
 	}
 
 	static void Svc(int[] a, int[] p) {
-		System.out.println("SVC " + a[0]);
 
 		switch (a[0]) {
 			case 5:
@@ -138,9 +137,11 @@ class os {
 			ReadyJob waitingJob = waitingQueue.get(0);
 			int startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
 			int i = 1;
+
 			while(i < waitingQueue.size() && startAddress == -1){
 				waitingJob = waitingQueue.get(i);
 				startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
+				i++;
 			}
 
 			if (startAddress != -1) {
@@ -150,6 +151,7 @@ class os {
 						waitingJob.getJobSize(), waitingJob.getCPUTime(), waitingJob.getSubmissionTime(), startAddress));
 				System.out.println("\njob #" + waitingJob.getJobNumber() + " is added to ReadyQue with starting address at " + startAddress);
 				sos.siodrum(waitingJob.getJobNumber(), waitingJob.getJobSize(), startAddress, 0);
+				jobToBeInDrum = waitingJob.getJobNumber();
 				drumBusy = true;
 			}
 		}
