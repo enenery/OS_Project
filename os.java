@@ -1,6 +1,5 @@
 import java.util.*;
-// ToDo  2) add swap-out feature to swap a maxCPUTIme of a job in core is larger with
-// ToDo     the waiting job with a smaller maxCPUTime
+// ToDo  problems: 1) job #6 has -20 I/O count 2) merging memory seems to be not working
 
 
 class os {
@@ -69,6 +68,8 @@ class os {
 							toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
 
 							if (toBeSwappedOut != null) {
+								memoryList.remove(toBeSwappedOut.getJobNumber());
+								memoryList.displayContents();
 								sendAJobToSwapOut(toBeSwappedOut);
 								addToWaitingQueue(mPCB);
 							} else
@@ -90,7 +91,9 @@ class os {
 					toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
 
 					if (toBeSwappedOut != null) {
+						memoryList.remove(toBeSwappedOut.getJobNumber());
 						sendAJobToSwapOut(toBeSwappedOut);
+						memoryList.displayContents();
 					} else
 						addToWaitingQueue(mPCB);
 				}
@@ -131,7 +134,7 @@ class os {
 				break;
 			case 7:
                 //getReadyJob(p[1]).displayContents();
-                //System.out.println(memoryList.get(p[1]).needsMoreIO());
+                System.out.println("\ncase 7: " + memoryList.get(p[1]).needsMoreIO());
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
@@ -192,13 +195,16 @@ class os {
 				removeReadyJob(jobToBeSwappedOut);
 				addToWaitingQueue(swappedJob);
 				System.out.println("\n///DRUMINT: job #" + swappedJob.getJobNumber() + " has been removed out of memory.");
-				ReadyJob toBeSwappedIn = jobToBeSwappedIn;
-				int startAddress = memoryList.add(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize());
-				int i = 1;
 				swappingIn = true;
-				sos.siodrum(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize(), startAddress, 0);
-				jobToBeInDrum = toBeSwappedIn.getJobNumber();
-				drumBusy = true;
+				ReadyJob toBeSwappedIn = jobToBeSwappedIn;
+				System.out.println("\n///DRUMINT: job #" + toBeSwappedIn.getJobNumber() + " should be sent to drum.");
+				memoryList.displayContents();
+				int startAddress = memoryList.add(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize());
+				if(startAddress != -1){
+					System.out.println("\n///DRUMINT: job #" + toBeSwappedIn.getJobNumber() + " has been sent out to drum.");
+					removeWaitJob(toBeSwappedIn.getJobNumber());
+					sendAJobToDrum(toBeSwappedIn);
+				}
 			}
 		}
 
@@ -257,7 +263,7 @@ class os {
 			while (i < listReadyQue.size()) {
 				ReadyJob jobToBeRun = listReadyQue.get(i);
 				if (!jobToBeRun.isBlocked() && jobToBeRun.isInDrum()) {
-					//System.out.println("\nWe are going to run a job #" + p[1]);
+					System.out.println("\nWe are going to run a job #" + p[1]);
 					runReadyJob(jobToBeRun.getJobNumber(), jobToBeRun.getJobSize(), jobToBeRun.getStartingAddress(), a, p);
 					return;
 				} else {

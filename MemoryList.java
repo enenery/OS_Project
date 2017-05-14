@@ -244,10 +244,13 @@ class MemoryList{
     	if(other == null)
     		memoryList = null;
     	else{
-    		for(int i = 0; i<other.memLst.size(); i++)
+    		for(int i = 0; i< other.memLst.size(); i++)
     			memoryList.memLst.add(other.memLst.get(i));
 		}
-    	memoryList.displayContents();
+
+	   memoryList.remove(0);
+    	memoryList.mergeAdjacent();
+
     	return memoryList;
 
 	}
