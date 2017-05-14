@@ -9,10 +9,11 @@ class MemoryList{
     }
     
     public MemoryList(MemoryList old){
-        this.memLst = null;
-        for(int i = 0; i < old.memLst.size(); i++){
-            this.memLst.add(old.get(i));
-        }
+		if(old != null) {
+			for (int i = 0; i < old.memLst.size(); i++) {
+				this.memLst.add(old.memLst.get(i));
+			}
+		}
     }
     
 	/**
@@ -236,5 +237,18 @@ class MemoryList{
     
 	public boolean isEmpty() {
 		return memLst.isEmpty();
+	}
+
+	public MemoryList copy(MemoryList other){
+    	MemoryList memoryList = new MemoryList();
+    	if(other == null)
+    		memoryList = null;
+    	else{
+    		for(int i = 0; i<other.memLst.size(); i++)
+    			memoryList.memLst.add(other.memLst.get(i));
+		}
+    	memoryList.displayContents();
+    	return memoryList;
+
 	}
 }

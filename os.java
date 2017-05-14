@@ -51,14 +51,21 @@ class os {
 					while (i < waitingQueue.size() ) {
 						waitingJob = waitingQueue.get(i);
 						startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
-
+						waitingJob.setStartingAddress(startAddress);
 						if (startAddress != -1) {
 							sendAJobToDrum(waitingJob);
+							removeWaitJob(waitingJob.getJobNumber());
 							setAJobToRun(a, p);
 							addToWaitingQueue(mPCB);
 							return;
-						} else {
-							jobToBeSwappedIn = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
+						}
+					}
+					//when there is no job in waitingQueue that fits without removing a job in memory
+					i = 0;
+					while(i < waitingQueue.size()){
+
+							waitingJob = waitingQueue.get(i);
+							jobToBeSwappedIn = waitingJob;
 							toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
 
 							if (toBeSwappedOut != null) {
@@ -66,14 +73,11 @@ class os {
 								addToWaitingQueue(mPCB);
 							} else
 								i++;
-						}
-					}
-						if(waitingQueue.size() == i)
-							addToWaitingQueue(mPCB);
 
+					}
+							addToWaitingQueue(mPCB);
 			}else
 				{
-
 				/*when a waitingQue is empty, send this newly arrived job to siodrum
 					if the newly arrived job doesn't fit in memory, try to find a job to swap out
 				 */
@@ -242,7 +246,7 @@ class os {
 
 		printReadyQue();
 		printWaitQue();
-		memoryList.displayContents();
+		//memoryList.displayContents();
 	}
 
 
@@ -402,11 +406,15 @@ class os {
     }
     
     static boolean canFit(int size, int jobNum){
-        MemoryList tmp = new MemoryList(memoryList);
-        tmp.remove(jobNum);
-        if(tmp.add(-1,size) != -1 )
-            return true;
-        else return false;
+        MemoryList tmp = memoryList.copy(memoryList);
+        //tmp = new MemoryList(memoryList);
+        if(tmp!=null) {
+			tmp.remove(jobNum);
+			if (tmp.add(-1, size) != -1)
+				return true;
+			else return false;
+		}
+		return false;
     }
 
     static void sendAJobToDrum(ReadyJob toBeSent){
