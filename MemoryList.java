@@ -79,7 +79,30 @@ class MemoryList{
     		return;
     	}
     }
-	
+    
+    public void mergeMemory() {
+		if (memLst.size() > 1) {
+			int i = 1;
+			Memory current = this.memLst.get(i);
+			Memory trailing = this.memLst.get(i-1);
+            
+			while (i<this.memLst.size()) {
+				if (current.getLocation() == (trailing.getSize() +  trailing.getLocation())){
+					int newSize = current.getSize() + trailing.getSize();
+					trailing.setSize(newSize);
+					this.memLst.remove(i);
+					i--;
+				}
+                trailing = this.memLst.get(i);
+                i++;
+                if(i<this.memLst.size())
+					current = this.memLst.get(i);
+            }
+            
+        }
+        
+    }
+    
 	/**
      *Adds a new job into Memory
      * @param jobNum
@@ -133,7 +156,9 @@ class MemoryList{
     			//we change the isOccupied flag to false
     			free(tmp);
     			//merge any adjacent free spaces
-    			mergeAdjacent();
+				System.out.println("\nremove: to be merged");
+    			//mergeMemory();
+				mergeAdjacent();
     			return;
     		}
     		try{
@@ -199,6 +224,7 @@ class MemoryList{
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
     	while(memIter!=null){
+    		
     		if(tmp.getJobNumber() == jobNum){
     			switch(mode){
                     case 0:
@@ -213,7 +239,6 @@ class MemoryList{
     			tmp = memIter.next();
     		}
     		catch(Exception NoSuchElementException){
-                return;
     		}
     	}
     }
@@ -221,7 +246,6 @@ class MemoryList{
     public Memory get(int jobNum){
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
-
     	while(memIter!=null){
     		if(tmp.getJobNumber() == jobNum){
     			return tmp;
@@ -239,7 +263,7 @@ class MemoryList{
 	public boolean isEmpty() {
 		return memLst.isEmpty();
 	}
-
+    
 	public MemoryList copy(MemoryList other){
     	MemoryList memoryList = new MemoryList();
     	if(other == null)
@@ -248,11 +272,11 @@ class MemoryList{
     		for(int i = 0; i< other.memLst.size(); i++)
     			memoryList.memLst.add(other.memLst.get(i));
 		}
-
-	   memoryList.remove(0);
+        
+        memoryList.remove(0);
     	memoryList.mergeAdjacent();
-
+        
     	return memoryList;
-
+        
 	}
 }
