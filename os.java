@@ -38,8 +38,6 @@ class os {
 	 * @param p
 	 */
 	static void Crint(int[] a, int[] p) {
-        System.out.println("CRINT ");
-
 		ReadyJob job = getReadyJob(jobLeftForSOS);
 		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1 && !job.isBlocked()) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
@@ -80,7 +78,7 @@ class os {
                     jobToBeSwappedIn = waitingJob;
                     toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
                     
-                    if (toBeSwappedOut != null) {
+                    if (toBeSwappedOut != null && !toBeSwappedOut.isBlocked()) {
                         memoryList.remove(toBeSwappedOut.getJobNumber());
                         listReadyQue.remove(toBeSwappedOut);
                         sendAJobToSwapOut(toBeSwappedOut);
@@ -98,12 +96,11 @@ class os {
 				if (startingAddress != -1) {
 					sendAJobToDrum(new ReadyJob(p[1], p[2], p[3], p[4], p[5], startingAddress));
 				} else {
-					System.out.println("\nDRUM : a job will be removed");
+					//System.out.println("\nDRUM : a job will be removed");
 					jobToBeSwappedIn = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 					toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
                     
-					if (toBeSwappedOut != null) {
-                        System.out.println("\nDRUM : a job will be removed != null");
+					if (toBeSwappedOut != null && !toBeSwappedOut.isBlocked()) {
 						memoryList.remove(toBeSwappedOut.getJobNumber());
 						sendAJobToSwapOut(toBeSwappedOut);
 					} else
