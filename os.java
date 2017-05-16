@@ -68,16 +68,16 @@ class os {
                     }
                 }
                 //when there is no job in waitingQueue that fits without removing a job in memory
+				//we find a job that should be swapped with another job
                 i = 0;
                 while(i < waitingQueue.size()){
-                    System.out.println("\nDRUM IS NOT BUSY: a job will be removed");
+                    System.out.println("\nDRUM IS NOT BUSY: A job will be removed");
                     waitingJob = waitingQueue.get(i);
                     jobToBeSwappedIn = waitingJob;
                     toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
                     
                     if (toBeSwappedOut != null) {
                         memoryList.remove(toBeSwappedOut.getJobNumber());
-                        memoryList.displayContents();
                         sendAJobToSwapOut(toBeSwappedOut);
                         addToWaitingQueue(mPCB);
                     } else
@@ -102,7 +102,6 @@ class os {
 					if (toBeSwappedOut != null) {
 						memoryList.remove(toBeSwappedOut.getJobNumber());
 						sendAJobToSwapOut(toBeSwappedOut);
-						memoryList.displayContents();
 					} else
 						addToWaitingQueue(mPCB);
 				}
@@ -119,9 +118,6 @@ class os {
     
 	static void Svc(int[] a, int[] p) {
 		System.out.println("\nSVC: job left for sos last was " + "job #" +jobLeftForSOS);
-		if(inReadyQue(6)){
-			System.out.println("\nSVC:  job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
-		}
         
 		if(inReadyQue(jobLeftForSOS)) {
 			ReadyJob job = getReadyJob(jobLeftForSOS);
@@ -154,7 +150,7 @@ class os {
 				memoryList.changeIO(p[1], 1);
 				break;
 			case 7:
-                //getReadyJob(p[1]).displayContents();
+
                 System.out.println("\ncase 7: " + "job #" + p[1] + "'s io/count = " + memoryList.get(p[1]).needsMoreIO());
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
 					getReadyJob(p[1]).block();
@@ -205,7 +201,7 @@ class os {
 		}
 		if(jobToBeInIO != -1 && inReadyQue(jobToBeInIO)) {
 			ReadyJob job = getReadyJob(jobToBeInIO);
-			System.out.println("\n////////DskINT: jobToBeInIO = " + jobToBeInDrum + " through getReadyJob(job#) is " + "job #" +job.getJobNumber());
+			System.out.println("\n////////DskINT: jobToBeInIO = " + jobToBeInIO + " through getReadyJob(job#) is " + "job #" +job.getJobNumber());
 			if (!job.isBlocked())
 				job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
             
@@ -228,6 +224,8 @@ class os {
 	 * @param p
 	 */
 	static void Drmint(int[] a, int[] p){
+		System.out.println("\n//DRUMINT: jobToBeSwappedOut is job #" + jobToBeSwappedOut + "\n: jobToBeSwappedIn is job #" + jobToBeSwappedIn);
+
 		ReadyJob job = getReadyJob(jobLeftForSOS);
 		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
@@ -253,7 +251,6 @@ class os {
 				swappingIn = true;
 				ReadyJob toBeSwappedIn = jobToBeSwappedIn;
 				System.out.println("\n///DRUMINT: job #" + toBeSwappedIn.getJobNumber() + " should be sent to drum.");
-				memoryList.displayContents();
 				int startAddress = memoryList.add(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize());
 				if(startAddress != -1){
 					System.out.println("\n///DRUMINT: job #" + toBeSwappedIn.getJobNumber() + " has been sent out to drum.");
@@ -389,8 +386,7 @@ class os {
 			System.out.print(" " + temp.getJobNumber() + " -> ");
 		}
 	}
-    
-    
+
 	static boolean oneJobOrLess(){
 		if(listReadyQue.size() < 2)
 			return true;
@@ -481,7 +477,6 @@ class os {
             sos.siodisk(mJob.getJobNumber());
             diskBusy = true;
         }
-        
     }
     
     static boolean canFit(int size, int jobNum){
@@ -498,19 +493,21 @@ class os {
     
     static void sendAJobToDrum(ReadyJob toBeSent){
 		sos.siodrum(toBeSent.getJobNumber(), toBeSent.getJobSize(), toBeSent.getStartingAddress(), 0);
+		jobToBeInDrum = toBeSent.getJobNumber();
 		addToReadyQueue(new ReadyJob(toBeSent.getJobNumber(), toBeSent.getPriority(), toBeSent.getJobSize(),
                                      toBeSent.getCPUTime(), toBeSent.getSubmissionTime(), toBeSent.getStartingAddress()));
-		jobToBeInDrum = toBeSent.getJobNumber();
-		System.out.println("\njob #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
+		System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
 		swappingIn = true;
 		drumBusy = true;
 	}
     
 	static void sendAJobToSwapOut(ReadyJob toBeSwappedOut){
+		addToWaitingQueue(toBeSwappedOut);
+    	removeReadyJob(toBeSwappedOut.getJobNumber());
 		sos.siodrum(toBeSwappedOut.getJobNumber(), toBeSwappedOut.getJobSize(), toBeSwappedOut.getStartingAddress(), 1);
 		swappingIn = false;
 		jobToBeSwappedOut = toBeSwappedOut.getJobNumber();
-		System.out.println("\njob #" + jobToBeSwappedOut + " is added to ReadyQue with starting address at " + toBeSwappedOut.getStartingAddress());
+		System.out.println("\njobToBeSwapOut is job #" + jobToBeSwappedOut);
 		drumBusy = true;
 	}
 }
