@@ -162,6 +162,7 @@ class MemoryList{
     			//mergeMemory();
 				mergeAdjacent();
                 //displayContents();
+
     			return;
     		}
     		try{
@@ -227,7 +228,6 @@ class MemoryList{
     	ListIterator<Memory> memIter = memLst.listIterator();
     	Memory tmp = memIter.next();
     	while(memIter!=null){
-    		
     		if(tmp.getJobNumber() == jobNum){
     			switch(mode){
                     case 0:
