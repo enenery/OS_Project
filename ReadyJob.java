@@ -8,6 +8,8 @@ public class ReadyJob{
     private int usedCPUTime;
     private boolean blocked;
     private boolean inDrum;
+    private int remainingCPUTime;
+    private int timeLeftForSOS;
 
     public ReadyJob(int jobNumber,int priority, int jobSize, int maxCPUTime,int submissionTime, int startingAddress){
         this.jobNumber = jobNumber;
@@ -19,6 +21,8 @@ public class ReadyJob{
         this.usedCPUTime = 0;
         blocked = false;
         inDrum = false;
+        remainingCPUTime = this.CPUTime;
+        timeLeftForSOS = -1;
     }
     
     public ReadyJob(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime){
@@ -29,6 +33,8 @@ public class ReadyJob{
         this.submissionTime = submissionTime;
         blocked = false;
         inDrum = false;
+        remainingCPUTime = this.CPUTime;
+        timeLeftForSOS = -1;
     }
     
     public ReadyJob(){
@@ -37,6 +43,7 @@ public class ReadyJob{
         this.CPUTime = -1;
         this.startingAddress = -1;
         this.usedCPUTime = -1;
+        timeLeftForSOS = -1;
     }
     
     public int getJobNumber(){return jobNumber;}
@@ -46,6 +53,8 @@ public class ReadyJob{
     public int getUsedCPUTime(){return usedCPUTime;}
     public int getPriority(){return priority;}
     public int getSubmissionTime(){return submissionTime;}
+    public int getRemainingCPUTime(){return CPUTime - usedCPUTime;}
+    public int getTimeLeftForSOS(){return timeLeftForSOS;}
     public boolean isBlocked(){return blocked;}
     public boolean isInDrum(){return inDrum;}
     
@@ -57,8 +66,10 @@ public class ReadyJob{
     public void setPriority(int priority){this.priority = priority;}
     public void setSubmissionTime(int submissionTime){this.submissionTime = submissionTime;}
     public void addUsedCPUTime(int usedCPUTime){this.usedCPUTime += usedCPUTime;}
+    public void setTimeLeftForSOS(int currentTime){this.timeLeftForSOS = currentTime;}
     public void block(){this.blocked = true;}
     public void unblock(){this.blocked = false;}
+
 
 
     public void setInDrum(){this.inDrum = true;}
