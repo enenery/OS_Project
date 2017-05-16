@@ -197,11 +197,9 @@ class os {
 	}
     
 	static void Dskint(int[] a, int[] p) {
-		if(inReadyQue(6)){
-			System.out.println("\nDskINT: job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
-		}
-        
 		System.out.println("\nDskINT: job left for sos last was " + "job #" +jobLeftForSOS);
+		System.out.println("\nDskINT: job #" +jobToBeInIO);
+
 		if(inReadyQue(jobLeftForSOS)) {
 			ReadyJob jobCPU = getReadyJob(jobLeftForSOS);
 			if (jobLeftForSOS != -1 && jobCPU.getTimeLeftForSOS() != -1 && jobLeftForSOS != jobToBeInIO) {
@@ -212,7 +210,7 @@ class os {
 		if(jobToBeInIO != -1 && inReadyQue(jobToBeInIO)) {
 			ReadyJob job = getReadyJob(jobToBeInIO);
 			System.out.println("\n////////DskINT: jobToBeInIO = " + jobToBeInDrum + " through getReadyJob(job#) is " + "job #" +job.getJobNumber());
-			if (!job.isBlocked())
+		if (!job.isBlocked())
 				job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
             
 			job.unblock();
@@ -223,12 +221,7 @@ class os {
         if(inReadyQue(jobToBeInIO))
             memoryList.changeIO(jobToBeInIO, 0);
 		
-        System.out.println("\nDskINT: job to be in I/O is job #" + jobToBeInIO);
-		System.out.println("\nDskINT: job #" + p[1] + "'s io/count = " + memoryList.get(p[1]).needsMoreIO());
-		if(inReadyQue(6)){
-			System.out.println("\nDskINT: job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
-		}
-		setAJobToRun(a, p);
+        setAJobToRun(a, p);
 	}
     
 	/**
@@ -239,20 +232,20 @@ class os {
 	 */
 	static void Drmint(int[] a, int[] p){
 		ReadyJob job = getReadyJob(jobLeftForSOS);
-		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
+		
+        if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
 			System.out.println("\n//DRUMINT: this job left for sos last -> job# " + jobLeftForSOS + "'s used CPU Time: " + job.getUsedCPUTime());
 		}
 		drumBusy = false;
 		
 		if(swappingIn) {
-			if (jobToBeInDrum != -1 ) {
 				ReadyJob swappedIn = getReadyJob(jobToBeInDrum);
 				if(swappedIn != null) {
 					swappedIn.setInDrum();
 					System.out.println("\n//DRUMINT: job #" + swappedIn.getJobNumber() + " swap completed.");
 				}
-			}
+			
 		}else{
 			if(jobToBeSwappedOut != -1){
 				ReadyJob swappedJob = getReadyJob(jobToBeSwappedOut);
@@ -387,7 +380,8 @@ class os {
 		ReadyJob temp;
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
-			System.out.print(" " + temp.getJobNumber() + " -> ");
+            temp.displayContents();
+			System.out.println("next -> ");
 		}
 	}
     
