@@ -38,6 +38,7 @@ class os {
 	 * @param p
 	 */
 	static void Crint(int[] a, int[] p) {
+
 		ReadyJob job = getReadyJob(jobLeftForSOS);
 		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1 && !job.isBlocked()) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
