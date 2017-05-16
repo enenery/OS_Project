@@ -1,5 +1,7 @@
 import java.util.*;
-// ToDo  problems: 1) job #6 has -20 I/O count 2) merging memory seems to be not working
+// ToDo  problems: 1) merging memory doesn't work -> in process of fixing it
+// ToDo 2) after a job is removed from memory, do not lose its usedCPUTime, which means yes, it has been removed from memory and
+//Todo when it is replaced into memory, it will have different starting address; however, job #, job size and usedCPUTime etc should be retained
 
 
 class os {
@@ -14,6 +16,7 @@ class os {
     static int jobToBeSwappedOut = -1;
     static boolean swappingIn = false;
     static ReadyJob jobToBeSwappedIn = null;
+    static int jobLeftForSOS = -1;
 
 	private static final int TIME_SLICE = 1;
 
@@ -25,7 +28,7 @@ class os {
         IOWaitQueue = new LinkedList<ReadyJob>();
 		drumBusy = false;
 		diskBusy = false;
-		//sos.ontrace();
+		sos.ontrace();
 	}
 	/**
 	 * if drum is not busy, we check if a waitingQue is empty. If not empty, we try  to find a waiting job
@@ -35,6 +38,11 @@ class os {
 	 * @param p
 	 */
 	static void Crint(int[] a, int[] p) {
+		ReadyJob job = getReadyJob(jobLeftForSOS);
+		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
+			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
+			System.out.println("\njob# " + jobLeftForSOS + "'s used CPU Time: " + job.getUsedCPUTime());
+		}
 		System.out.println("\nCRINT: job #" + p[1] + " has arrived");
 		ReadyJob mPCB = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 		ReadyJob toBeSwappedOut = null;
@@ -62,7 +70,7 @@ class os {
 					//when there is no job in waitingQueue that fits without removing a job in memory
 					i = 0;
 					while(i < waitingQueue.size()){
-
+						System.out.println("\nDRUM IS NOT BUSY: a job will be removed");
 							waitingJob = waitingQueue.get(i);
 							jobToBeSwappedIn = waitingJob;
 							toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
@@ -87,6 +95,7 @@ class os {
 				if (startingAddress != -1) {
 					sendAJobToDrum(new ReadyJob(p[1], p[2], p[3], p[4], p[5], startingAddress));
 				} else {
+					System.out.println("\nDRUM : a job will be removed");
 					jobToBeSwappedIn = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 					toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
 
@@ -109,7 +118,17 @@ class os {
 	}
     
 	static void Svc(int[] a, int[] p) {
+		System.out.println("\nSVC: job left for sos last was " + "job #" +jobLeftForSOS);
+		if(inReadyQue(6)){
+			System.out.println("\nSVC:  job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
+		}
 
+		if(inReadyQue(jobLeftForSOS)) {
+			ReadyJob job = getReadyJob(jobLeftForSOS);
+			int timeslice = p[5] - job.getTimeLeftForSOS();
+			System.out.println("\nSVC: " + a[0] + " job# " + p[1] + "'s used CPU Time: " + job.getUsedCPUTime());
+			job.addUsedCPUTime(timeslice);
+		}
 		switch (a[0]) {
 			case 5:
                 memoryList.remove(p[1]);
@@ -119,12 +138,14 @@ class os {
                 lookForIO();
                 break;
 			case 6:
+
 				//System.out.println("\nSvc: a=6");
 				if(!diskBusy){
 					sos.siodisk(p[1]);
                     jobToBeInIO = p[1];
 					diskBusy = true;
 					a[0] = 2;
+					setAJobToRun(a, p);
 				}
 				else{
                     IOWaitQueue.add(getReadyJob(p[1]));
@@ -134,7 +155,7 @@ class os {
 				break;
 			case 7:
                 //getReadyJob(p[1]).displayContents();
-                System.out.println("\ncase 7: " + memoryList.get(p[1]).needsMoreIO());
+                System.out.println("\ncase 7: " + "job #" + p[1] + "'s io/count = " + memoryList.get(p[1]).needsMoreIO());
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
 					getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
@@ -153,24 +174,51 @@ class os {
 	}
     
 	static void Tro(int[] a, int[] p){
-		//System.out.print("\ntro");
-		ReadyJob mReadyJob = getReadyJob(p[1]);
-		mReadyJob.addUsedCPUTime(TIME_SLICE);
-        
-		if(mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()){
-			removeReadyJob(p[1]);
-			memoryList.remove(p[1]);
-			a[0] = 1;
-			setAJobToRun(a, p);
-		}else
-			setAJobToRun(a, p);
+		System.out.print("\ntro job#" + p[1]);
+		if(inReadyQue(p[1])) {
+			ReadyJob mReadyJob = getReadyJob(p[1]);
+			mReadyJob.addUsedCPUTime(p[5] - mReadyJob.getTimeLeftForSOS());
 
+			if (mReadyJob.getCPUTime() <= mReadyJob.getUsedCPUTime()) {
+				removeReadyJob(p[1]);
+				memoryList.remove(p[1]);
+				a[0] = 1;
+				setAJobToRun(a, p);
+			} else
+				setAJobToRun(a, p);
+
+		}
 	}
     
 	static void Dskint(int[] a, int[] p) {
-		getReadyJob(jobToBeInIO).unblock();
+		if(inReadyQue(6)){
+			System.out.println("\nDskINT: job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
+		}
+
+		System.out.println("\nDskINT: job left for sos last was " + "job #" +jobLeftForSOS);
+		if(inReadyQue(jobLeftForSOS)) {
+			ReadyJob jobCPU = getReadyJob(jobLeftForSOS);
+			if (jobLeftForSOS != -1 && jobCPU.getTimeLeftForSOS() != -1 && jobLeftForSOS != jobToBeInIO) {
+				jobCPU.addUsedCPUTime(p[5] - jobCPU.getTimeLeftForSOS());
+				System.out.println("\nDskINT: job #" + jobLeftForSOS + "'s used CPU Time: " + jobCPU.getUsedCPUTime());
+			}
+		}
+		if(jobToBeInIO != -1 && inReadyQue(jobToBeInIO)) {
+			ReadyJob job = getReadyJob(jobToBeInIO);
+			System.out.println("\n////////DskINT: jobToBeInIO = " + jobToBeInDrum + " through getReadyJob(job#) is " + "job #" +job.getJobNumber());
+			if (!job.isBlocked())
+				job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
+
+			job.unblock();
+		}
 		diskBusy = false;
 		memoryList.changeIO(p[1], 0);
+		System.out.println("\nDskINT: job to be in I/O is job #" + jobToBeInIO);
+		System.out.println("\nDskINT: job #" + p[1] + "'s io/count = " + memoryList.get(p[1]).needsMoreIO());
+		if(inReadyQue(6)){
+			System.out.println("\nDskINT: job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
+		}
+		setAJobToRun(a, p);
 	}
 
 	/**
@@ -180,13 +228,20 @@ class os {
 	 * @param p
 	 */
 	static void Drmint(int[] a, int[] p){
+		ReadyJob job = getReadyJob(jobLeftForSOS);
+		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
+			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
+			System.out.println("\n//DRUMINT: this job left for sos last -> job# " + jobLeftForSOS + "'s used CPU Time: " + job.getUsedCPUTime());
+		}
 		drumBusy = false;
-
+		
 		if(swappingIn) {
-			if (jobToBeInDrum != -1) {
+			if (jobToBeInDrum != -1 ) {
 				ReadyJob swappedIn = getReadyJob(jobToBeInDrum);
-				swappedIn.setInDrum();
-				System.out.println("\nDRUMINT: job #" + swappedIn.getJobNumber() + " swap completed.");
+				if(swappedIn != null) {
+					swappedIn.setInDrum();
+					System.out.println("\n//DRUMINT: job #" + swappedIn.getJobNumber() + " swap completed.");
+				}
 			}
 		}else{
 			if(jobToBeSwappedOut != -1){
@@ -263,7 +318,7 @@ class os {
 			while (i < listReadyQue.size()) {
 				ReadyJob jobToBeRun = listReadyQue.get(i);
 				if (!jobToBeRun.isBlocked() && jobToBeRun.isInDrum()) {
-					System.out.println("\nWe are going to run a job #" + p[1]);
+					//System.out.println("\nWe are going to run a job #" + p[1]);
 					runReadyJob(jobToBeRun.getJobNumber(), jobToBeRun.getJobSize(), jobToBeRun.getStartingAddress(), a, p);
 					return;
 				} else {
@@ -277,10 +332,19 @@ class os {
 
 	static void runReadyJob(int jobNum, int size, int startingAddress, int [] a, int [] p){
 		if (!(memoryList.isEmpty())) {
+			ReadyJob job = getReadyJob(jobNum);
+			int remainingCPUTime = job.getRemainingCPUTime();
+			
+			System.out.println("\nrunReadyJob job left for sos last was " + "job #" +jobLeftForSOS);
+			System.out.println("runReadyJob job #" + jobNum + "'s used CPU Time is " + job.getUsedCPUTime() +
+					" so it has the remaining CPU Time of " + remainingCPUTime);
+			job.setTimeLeftForSOS(p[5]);
+			System.out.println("runReadyJob job #" + jobNum + " leaving OS now at " + p[5]);
+			jobLeftForSOS = jobNum;
 			p[1] = jobNum;
 			p[2] = startingAddress;
 			p[3] = size;
-			p[4] = TIME_SLICE;
+			p[4] = remainingCPUTime;
 			a[0] = 2;
 
 		}else
@@ -288,19 +352,28 @@ class os {
 	}
     
 	static ReadyJob getReadyJob(int jobNumber){
+		System.out.println("\ngetReadyJob");
 		ReadyJob temp = new ReadyJob();
 		for (int i = 0; i < listReadyQue.size(); i++) {
-			temp = listReadyQue.get(i);
-			if (temp.getJobNumber() == jobNumber) {
+			if (listReadyQue.get(i).getJobNumber() == jobNumber) {
+				temp = listReadyQue.get(i);
+				temp.setTimeLeftForSOS(listReadyQue.get(i).getTimeLeftForSOS());
+				temp.setUsedCPUTime(listReadyQue.get(i).getUsedCPUTime());
+				temp.setStartingAddress(listReadyQue.get(i).getStartingAddress());
+				temp.setCPUTime(listReadyQue.get(i).getCPUTime());
+				temp.setJobNumber(listReadyQue.get(i).getJobNumber());
+				temp.setJobSize(listReadyQue.get(i).getJobSize());
+				temp.setPriority(listReadyQue.get(i).getPriority());
 				return temp;
 			}
 		}
-		return temp;
+		System.out.println("\ngetReadyJob: job # " + jobNumber + " DNE");
+		return null;
 	}
     
 
 	static void printReadyQue(){
-		System.out.print("\nReadyQue has:");
+		System.out.println("\nReadyQue has:");
 		ReadyJob temp;
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
@@ -309,7 +382,7 @@ class os {
 	}
 
 	static void printWaitQue(){
-		System.out.print("\nWaitQue has:");
+		System.out.println("\nWaitQue has:");
 		ReadyJob temp;
 		for (int i = 0; i < waitingQueue.size(); i++) {
 			temp = waitingQueue.get(i);
