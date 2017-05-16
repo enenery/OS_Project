@@ -1,6 +1,5 @@
 import java.util.*;
-// ToDo  2) add swap-out feature to swap a maxCPUTIme of a job in core is larger with
-// ToDo     the waiting job with a smaller maxCPUTime
+// ToDo  problems: 1) job #6 has -20 I/O count 2) merging memory seems to be not working
 
 
 class os {
@@ -40,8 +39,6 @@ class os {
 		System.out.println("\nCRINT: job #" + p[1] + " has arrived");
 		ReadyJob mPCB = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 		ReadyJob toBeSwappedOut = null;
-<<<<<<< HEAD
-        
 		if (!drumBusy) {
 			System.out.println("\nDRUM IS NOT BUSY");
 			
@@ -57,12 +54,6 @@ class os {
                 
 				jobToBeSwappedIn = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 				toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
-=======
-
-		if (!drumBusy) {
-			System.out.println("\nDRUM IS NOT BUSY");
->>>>>>> cfa640619967c1b0bbbef0427865e457a3a6921c
-
 			if(!waitingQueue.isEmpty()) {
 				ReadyJob waitingJob = null;
 				int startAddress = -1;
@@ -71,29 +62,35 @@ class os {
 					while (i < waitingQueue.size() ) {
 						waitingJob = waitingQueue.get(i);
 						startAddress = memoryList.add(waitingJob.getJobNumber(), waitingJob.getJobSize());
-
+						waitingJob.setStartingAddress(startAddress);
 						if (startAddress != -1) {
 							sendAJobToDrum(waitingJob);
+							removeWaitJob(waitingJob.getJobNumber());
 							setAJobToRun(a, p);
 							addToWaitingQueue(mPCB);
 							return;
-						} else {
-							jobToBeSwappedIn = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
+						}
+					}
+					//when there is no job in waitingQueue that fits without removing a job in memory
+					i = 0;
+					while(i < waitingQueue.size()){
+
+							waitingJob = waitingQueue.get(i);
+							jobToBeSwappedIn = waitingJob;
 							toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
 
 							if (toBeSwappedOut != null) {
+								memoryList.remove(toBeSwappedOut.getJobNumber());
+								memoryList.displayContents();
 								sendAJobToSwapOut(toBeSwappedOut);
 								addToWaitingQueue(mPCB);
 							} else
 								i++;
-						}
-					}
-						if(waitingQueue.size() == i)
-							addToWaitingQueue(mPCB);
 
+					}
+							addToWaitingQueue(mPCB);
 			}else
 				{
-
 				/*when a waitingQue is empty, send this newly arrived job to siodrum
 					if the newly arrived job doesn't fit in memory, try to find a job to swap out
 				 */
@@ -106,7 +103,9 @@ class os {
 					toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
 
 					if (toBeSwappedOut != null) {
+						memoryList.remove(toBeSwappedOut.getJobNumber());
 						sendAJobToSwapOut(toBeSwappedOut);
+						memoryList.displayContents();
 					} else
 						addToWaitingQueue(mPCB);
 				}
@@ -147,7 +146,7 @@ class os {
 				break;
 			case 7:
                 //getReadyJob(p[1]).displayContents();
-                //System.out.println(memoryList.get(p[1]).needsMoreIO());
+                System.out.println("\ncase 7: " + memoryList.get(p[1]).needsMoreIO());
 				if(memoryList.get(p[1]).needsMoreIO() > 0){
                     getReadyJob(p[1]).block();
 					if(oneJobOrLess()){
@@ -181,11 +180,8 @@ class os {
 	}
     
 	static void Dskint(int[] a, int[] p) {
-<<<<<<< HEAD
         System.out.println(jobToBeInIO);
 		System.out.println("\nDsk" + p[1]);
-=======
->>>>>>> cfa640619967c1b0bbbef0427865e457a3a6921c
 		getReadyJob(jobToBeInIO).unblock();
 		diskBusy = false;
 		memoryList.changeIO(jobToBeInIO, 0);
@@ -210,21 +206,18 @@ class os {
 			if(jobToBeSwappedOut != -1){
 				getReadyJob(jobToBeSwappedOut).outOfDrum();
 				removeReadyJob(jobToBeSwappedOut);
-<<<<<<< HEAD
-                ////
-				waitingQueue.add(swappedJob);
-
-=======
 				addToWaitingQueue(swappedJob);
 				System.out.println("\n///DRUMINT: job #" + swappedJob.getJobNumber() + " has been removed out of memory.");
->>>>>>> cfa640619967c1b0bbbef0427865e457a3a6921c
-				ReadyJob toBeSwappedIn = jobToBeSwappedIn;
-				int startAddress = memoryList.add(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize());
-				int i = 1;
 				swappingIn = true;
-				sos.siodrum(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize(), startAddress, 0);
-				jobToBeInDrum = toBeSwappedIn.getJobNumber();
-				drumBusy = true;
+				ReadyJob toBeSwappedIn = jobToBeSwappedIn;
+				System.out.println("\n///DRUMINT: job #" + toBeSwappedIn.getJobNumber() + " should be sent to drum.");
+				memoryList.displayContents();
+				int startAddress = memoryList.add(toBeSwappedIn.getJobNumber(), toBeSwappedIn.getJobSize());
+				if(startAddress != -1){
+					System.out.println("\n///DRUMINT: job #" + toBeSwappedIn.getJobNumber() + " has been sent out to drum.");
+					removeWaitJob(toBeSwappedIn.getJobNumber());
+					sendAJobToDrum(toBeSwappedIn);
+				}
 			}
 		}
 
@@ -272,7 +265,7 @@ class os {
 
 		printReadyQue();
 		printWaitQue();
-		memoryList.displayContents();
+		//memoryList.displayContents();
 	}
 
 
@@ -283,7 +276,7 @@ class os {
 			while (i < listReadyQue.size()) {
 				ReadyJob jobToBeRun = listReadyQue.get(i);
 				if (!jobToBeRun.isBlocked() && jobToBeRun.isInDrum()) {
-					//System.out.println("\nWe are going to run a job #" + p[1]);
+					System.out.println("\nWe are going to run a job #" + p[1]);
 					runReadyJob(jobToBeRun.getJobNumber(), jobToBeRun.getJobSize(), jobToBeRun.getStartingAddress(), a, p);
 					return;
 				} else {
@@ -433,11 +426,15 @@ class os {
     }
     
     static boolean canFit(int size, int jobNum){
-        MemoryList tmp = new MemoryList(memoryList);
-        tmp.remove(jobNum);
-        if(tmp.add(-1,size) != -1 )
-            return true;
-        else return false;
+        MemoryList tmp = memoryList.copy(memoryList);
+        //tmp = new MemoryList(memoryList);
+        if(tmp!=null) {
+			tmp.remove(jobNum);
+			if (tmp.add(-1, size) != -1)
+				return true;
+			else return false;
+		}
+		return false;
     }
 
     static void sendAJobToDrum(ReadyJob toBeSent){
