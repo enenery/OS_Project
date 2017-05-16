@@ -154,14 +154,14 @@ class MemoryList{
     	while(memIter!=null){
     		//We check if the job number matches
     		if(tmp.getJobNumber() == jobNum){
-				System.out.println("\n Memlist.remove:match");
+				//System.out.println("\n Memlist.remove:match");
     			//we change the isOccupied flag to false
     			free(tmp);
     			//merge any adjacent free spaces
-				System.out.println("\nremove: to be merged");
+				//System.out.println("\nremove: to be merged");
     			//mergeMemory();
 				mergeAdjacent();
-                displayContents();
+                //displayContents();
     			return;
     		}
     		try{
