@@ -41,7 +41,7 @@ class os {
         System.out.println("CRINT ");
 
 		ReadyJob job = getReadyJob(jobLeftForSOS);
-		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
+		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1 && !job.isBlocked()) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
 			System.out.println("\njob# " + jobLeftForSOS + "'s used CPU Time: " + job.getUsedCPUTime());
 		}
@@ -68,6 +68,7 @@ class os {
                         addToWaitingQueue(mPCB);
                         return;
                     }
+                    i++;
                 }
                 //when there is no job in waitingQueue that fits without removing a job in memory
 				//we find a job that should be swapped with another job
@@ -122,9 +123,8 @@ class os {
     
 	static void Svc(int[] a, int[] p) {
 		System.out.println("\nSVC: job left for sos last was " + "job #" +jobLeftForSOS);
-        
-		if(inReadyQue(jobLeftForSOS)) {
-			ReadyJob job = getReadyJob(jobLeftForSOS);
+		ReadyJob job = getReadyJob(jobLeftForSOS);
+		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1 && !job.isBlocked()) {
 			int timeslice = p[5] - job.getTimeLeftForSOS();
 			System.out.println("\nSVC: " + a[0] + " job# " + p[1] + "'s used CPU Time: " + job.getUsedCPUTime());
 			job.addUsedCPUTime(timeslice);
@@ -234,7 +234,7 @@ class os {
 		System.out.println("\n//DRUMINT: jobToBeSwappedOut is job #" + jobToBeSwappedOut + "\n: jobToBeSwappedIn is job #" + jobToBeSwappedIn);
 
 		ReadyJob job = getReadyJob(jobLeftForSOS);
-		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
+		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1 && !job.isBlocked()) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
 			System.out.println("\n//DRUMINT: this job left for sos last -> job# " + jobLeftForSOS + "'s used CPU Time: " + job.getUsedCPUTime());
 		}
