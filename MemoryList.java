@@ -9,6 +9,7 @@ class MemoryList{
     }
     
     public MemoryList(MemoryList old){
+        memLst = new LinkedList<Memory>();
 		if(old != null) {
 			for (int i = 0; i < old.memLst.size(); i++) {
 				this.memLst.add(old.memLst.get(i));
@@ -153,12 +154,14 @@ class MemoryList{
     	while(memIter!=null){
     		//We check if the job number matches
     		if(tmp.getJobNumber() == jobNum){
+				System.out.println("\n Memlist.remove:match");
     			//we change the isOccupied flag to false
     			free(tmp);
     			//merge any adjacent free spaces
 				System.out.println("\nremove: to be merged");
     			//mergeMemory();
 				mergeAdjacent();
+                displayContents();
     			return;
     		}
     		try{
@@ -270,12 +273,8 @@ class MemoryList{
     		memoryList = null;
     	else{
     		for(int i = 0; i< other.memLst.size(); i++)
-    			memoryList.memLst.add(other.memLst.get(i));
+                memoryList.add(memLst.get(i).getJobNumber(),memLst.get(i).getSize());
 		}
-        
-        memoryList.remove(0);
-    	memoryList.mergeAdjacent();
-        
     	return memoryList;
         
 	}
