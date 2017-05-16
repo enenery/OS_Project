@@ -5,7 +5,7 @@ import java.util.*;
 
 
 class os {
-	static MemoryList memoryList;
+	private static MemoryList memoryList;
 	private static LinkedList<ReadyJob> waitingQueue;
 	private static LinkedList<ReadyJob> listReadyQue;
     private static LinkedList<ReadyJob> IOWaitQueue;
@@ -38,6 +38,8 @@ class os {
 	 * @param p
 	 */
 	static void Crint(int[] a, int[] p) {
+        System.out.println("CRINT ");
+
 		ReadyJob job = getReadyJob(jobLeftForSOS);
 		if(job != null && jobLeftForSOS != -1 && job.getTimeLeftForSOS() != -1) {
 			job.addUsedCPUTime(p[5] - job.getTimeLeftForSOS());
@@ -77,6 +79,7 @@ class os {
                     
                     if (toBeSwappedOut != null) {
                         memoryList.remove(toBeSwappedOut.getJobNumber());
+                        listReadyQue.remove(toBeSwappedOut);
                         memoryList.displayContents();
                         sendAJobToSwapOut(toBeSwappedOut);
                         addToWaitingQueue(mPCB);
@@ -100,6 +103,7 @@ class os {
 					toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
                     
 					if (toBeSwappedOut != null) {
+                        System.out.println("\nDRUM : a job will be removed != null");
 						memoryList.remove(toBeSwappedOut.getJobNumber());
 						sendAJobToSwapOut(toBeSwappedOut);
 						memoryList.displayContents();
@@ -129,8 +133,10 @@ class os {
 			System.out.println("\nSVC: " + a[0] + " job# " + p[1] + "'s used CPU Time: " + job.getUsedCPUTime());
 			job.addUsedCPUTime(timeslice);
 		}
+        
 		switch (a[0]) {
 			case 5:
+                System.out.println("SVC " + a[0]);
                 memoryList.remove(p[1]);
                 removeReadyJob(p[1]);
                 a[0] = 1;
@@ -138,7 +144,7 @@ class os {
                 lookForIO();
                 break;
 			case 6:
-                
+                System.out.println("SVC " + a[0]);
 				//System.out.println("\nSvc: a=6");
 				if(!diskBusy){
 					sos.siodisk(p[1]);
@@ -211,9 +217,13 @@ class os {
             
 			job.unblock();
 		}
-		diskBusy = false;
-		memoryList.changeIO(p[1], 0);
-		System.out.println("\nDskINT: job to be in I/O is job #" + jobToBeInIO);
+		
+        diskBusy = false;
+        
+        if(inReadyQue(jobToBeInIO))
+            memoryList.changeIO(jobToBeInIO, 0);
+		
+        System.out.println("\nDskINT: job to be in I/O is job #" + jobToBeInIO);
 		System.out.println("\nDskINT: job #" + p[1] + "'s io/count = " + memoryList.get(p[1]).needsMoreIO());
 		if(inReadyQue(6)){
 			System.out.println("\nDskINT: job# 6's used CPU Time: " + getReadyJob(6).getUsedCPUTime());
@@ -407,8 +417,7 @@ class os {
 		}
 		return false;
 	}
-    
-    
+    ///////////////////////////////////////////
 	static boolean inWaitQue(int jobNumber){
 		ReadyJob temp;
 		for (int i = 0; i < waitingQueue.size(); i++) {
@@ -418,7 +427,7 @@ class os {
 		}
 		return false;
 	}
-    
+    ///////////////////////////////////////////
 	static void addToReadyQueue(ReadyJob readyJob){
 		int i = 0;
 		while(i < listReadyQue.size()){
@@ -430,7 +439,7 @@ class os {
 		}
 		listReadyQue.add(readyJob);
 	}
-    
+    ///////////////////////////////////////////
 	static void addToWaitingQueue(ReadyJob readyJob){
 		int i = 0;
 		while(i < waitingQueue.size()){
@@ -475,15 +484,6 @@ class os {
 		return jobToBeSwapped;
 	}
     
-    static void lookForIO(){
-        if(!IOWaitQueue.isEmpty() && !diskBusy){
-            ReadyJob mJob = IOWaitQueue.pop();
-            sos.siodisk(mJob.getJobNumber());
-            diskBusy = true;
-        }
-        
-    }
-    
     static boolean canFit(int size, int jobNum){
         MemoryList tmp = memoryList.copy(memoryList);
         //tmp = new MemoryList(memoryList);
@@ -507,10 +507,21 @@ class os {
 	}
     
 	static void sendAJobToSwapOut(ReadyJob toBeSwappedOut){
+        addToWaitingQueue(toBeSwappedOut);
+        removeReadyJob(toBeSwappedOut.getJobNumber());
 		sos.siodrum(toBeSwappedOut.getJobNumber(), toBeSwappedOut.getJobSize(), toBeSwappedOut.getStartingAddress(), 1);
 		swappingIn = false;
 		jobToBeSwappedOut = toBeSwappedOut.getJobNumber();
 		System.out.println("\njob #" + jobToBeSwappedOut + " is added to ReadyQue with starting address at " + toBeSwappedOut.getStartingAddress());
 		drumBusy = true;
 	}
+    
+    static void lookForIO(){
+        if(!IOWaitQueue.isEmpty() && !diskBusy){
+            ReadyJob mJob = IOWaitQueue.pop();
+            sos.siodisk(mJob.getJobNumber());
+            diskBusy = true;
+        }
+        
+    }
 }
