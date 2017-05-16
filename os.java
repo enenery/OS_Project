@@ -76,7 +76,6 @@ class os {
 				//we find a job that should be swapped with another job
                 i = 0;
                 while(i < waitingQueue.size()){
-                    System.out.println("\nDRUM IS NOT BUSY: A job will be removed");
                     waitingJob = waitingQueue.get(i);
                     jobToBeSwappedIn = waitingJob;
                     toBeSwappedOut = findAJobToSwap(a, p, jobToBeSwappedIn.getJobSize());
@@ -85,10 +84,8 @@ class os {
                         memoryList.remove(toBeSwappedOut.getJobNumber());
                         listReadyQue.remove(toBeSwappedOut);
                         sendAJobToSwapOut(toBeSwappedOut);
-                        addToWaitingQueue(mPCB);
                     } else
                         i++;
-                    
                 }
                 addToWaitingQueue(mPCB);
 			}else
