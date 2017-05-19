@@ -1,6 +1,4 @@
 import java.util.*;
-//ToDo Find out where can I improve? currently having 344 jobs in with 294 jobs completed
-
 
 class os {
 	private static MemoryList memoryList;
@@ -25,7 +23,7 @@ class os {
 		diskBusy = false;
 		//sos.ontrace();
 	}
-
+    
 	/**
 	 * a new job arrives at Crint from sos
 	 * 1. check if drum is free
@@ -40,11 +38,10 @@ class os {
 	 * @param p
 	 */
 	static void Crint(int[] a, int[] p) {
-        System.out.println("\nCRINT");
         int jobNumber = p[1];
         int jobSize = p[3];
         int jobMaxCPUTime = p[5];
-
+        
 		if(!drumBusy){
 			int startAddress =  memoryList.add(p[1], p[3]);
 			if(startAddress != -1)
@@ -58,11 +55,11 @@ class os {
 		else{
 			addAJobToWaitQueue(p);
 		}
-
+        
 		sendAJobToDrum();
         setAJobToRun(a, p);
 	}
-
+    
 	/**
 	 *Svc
 	 * For a[0] = 5
@@ -81,7 +78,6 @@ class os {
 	 * @param p
 	 */
 	static void Svc(int[] a, int[] p) {
-        System.out.println("\nSVC " + a[0] + " Job #" + p[1]);
 		switch (a[0]) {
 			case 5:
                 if(!isThereMoreIO(p[1])) {
@@ -98,13 +94,13 @@ class os {
 				break;
 			case 7:
                 if(isThereMoreIO(p[1]))
-				getReadyJob(p[1]).block();
+                    getReadyJob(p[1]).block();
 				break;
 		}
 		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
-
+    
 	/**
 	 * Tro
 	 * (for shortest remaining time next, if Tro gets called, it means it has used up the max CPU Time)
@@ -118,22 +114,20 @@ class os {
 	 * @param p
 	 */
 	static void Tro(int[] a, int[] p){
-		System.out.println("\nTro");
 		ReadyJob job = jobLeftForSOS.getFirst();
-
+        
 		if(!isThereMoreIO(job.getJobNumber())) {
 			removeAJob(job);
-			System.out.println("\nTro: Job #" + job.getJobNumber() + " is done completely");
 			jobLeftForSOS.remove(0);
 		}
 		else{
 			getReadyJob(job.getJobNumber()).setWaitingForIOCompletion(true);
 		}
-
+        
 		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
-
+    
 	/**
 	 * Dskint
 	 * 0. sets diskBusy = false
@@ -144,7 +138,6 @@ class os {
 	 * @param p
 	 */
 	static void Dskint(int[] a, int[] p) {
-		System.out.println("\nDskint");
 		diskBusy = false;
 		popAJobInIOQueue();
 		sendAJobToDisk();
@@ -166,25 +159,24 @@ class os {
 	 * @param p
 	 */
 	static void Drmint(int[] a, int[] p){
-		System.out.println("\nDrmint");
 		drumBusy = false;
-
+        
 		if(!jobToSwapOut.isEmpty()){
 			// TODO: 5/18/2017 messy -> so when next time this job is placed into memory you have to
 			//todo put its IO request back into IO Queue
 			addToWaitingQueue(jobToSwapOut.getFirst());
 			removeAJob(jobToSwapOut.getFirst());
 			jobToSwapOut.remove(0);
-
+            
 		}else {
 			addAJobToReadyQueue();
 		}
-
+        
 		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
-
-
+    
+    
 	/**
 	 * removeReadyJob
 	 * traverses the listReadyQueue to find a job that matches @param
@@ -196,7 +188,6 @@ class os {
 			for (int i = 0; i < listReadyQue.size(); i++) {
 				ReadyJob temp = listReadyQue.get(i);
 				if (temp.getJobNumber() == jobNumber) {
-					//System.out.println("\nremoving a job # " + jobNumber + " from ReadyQue");
 					listReadyQue.get(i).outOfDrum();
 					listReadyQue.remove(i);
 					return;
@@ -204,7 +195,7 @@ class os {
 			}
 		}
 	}
-
+    
 	/**
 	 * setAJobToRun
 	 * 1. set the usedCPUTime for the previously running job
@@ -216,7 +207,7 @@ class os {
 	 */
 	static void setAJobToRun(int [] a, int[] p) {
 		os_setUsedCPUTime(p[5]);
-
+        
 		if (!listReadyQue.isEmpty()) {
 			sortReadyJob();
 			int i = 0;
@@ -225,18 +216,16 @@ class os {
 				if (!jobToBeRun.isBlocked() && jobToBeRun.isInDrum() && !jobToBeRun.isWaitingForIOCompletion()) {
 					jobLeftForSOS.add(jobToBeRun);
 					jobToBeRun.setTimeLeftForSOS(p[5]);
-					//System.out.println("\nsetAJobToRun: We are going to run a job #" +jobToBeRun.getJobNumber());
 					runReadyJob(jobToBeRun, a, p);
 					return;
 				} else {
-					//System.out.println("\njob #" + jobToBeRun.getJobNumber() + " is blocked");
 					i++;
 				}
 			}
 		}
 		a[0] = 1;
 	}
-
+    
 	/**
 	 * os_setUsedCPUTime
 	 * 1. set the first job in jobLeftForSOS's usedCPUTime
@@ -249,7 +238,7 @@ class os {
 			jobLeftForSOS.remove(0);
 		}
 	}
-
+    
 	/**
 	 * runReadyJob
 	 * 1. sets all the information about the jobToRun sent from setAJobToRun method into p
@@ -259,73 +248,24 @@ class os {
 	 * @param p
 	 */
 	static void runReadyJob(ReadyJob jobToRun, int [] a, int [] p){
-			//System.out.println("\nrunReadyJob job left for sos last was " + "job #" +jobLeftForSOS);
-			p[1] = jobToRun.getJobNumber();
-			p[2] = jobToRun.getStartingAddress();
-			p[3] = jobToRun.getJobSize();
-			p[4] = jobToRun.getRemainingCPUTime();
-			a[0] = 2;
+        p[1] = jobToRun.getJobNumber();
+        p[2] = jobToRun.getStartingAddress();
+        p[3] = jobToRun.getJobSize();
+        p[4] = jobToRun.getRemainingCPUTime();
+        a[0] = 2;
 	}
     
 	static ReadyJob getReadyJob(int jobNumber){
-		//System.out.println("\ngetReadyJob");
 		ReadyJob temp = new ReadyJob();
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			if (listReadyQue.get(i).getJobNumber() == jobNumber) {
 				return listReadyQue.get(i);
 			}
 		}
-		//System.out.println("\ngetReadyJob: job # " + jobNumber + " DNE");
 		return null;
 	}
     
-    
-	static void printReadyQue(){
-		//System.out.println("\nReadyQue has:");
-		ReadyJob temp;
-		for (int i = 0; i < listReadyQue.size(); i++) {
-			temp = listReadyQue.get(i);
-            temp.displayContents();
-			//System.out.println("next -> ");
-		}
-	}
-
-	static void printIOQueue(){
-		System.out.println("\nIOQueue has:");
-		for (int i = 0; i < IOQueue.size(); i++)
-			System.out.print(IOQueue.get(i)+ " -> ");
-
-	}
-    
-	static void printWaitQue(){
-		//System.out.println("\nWaitQue has:");
-		ReadyJob temp;
-		for (int i = 0; i < waitingQueue.size(); i++) {
-			temp = waitingQueue.get(i);
-			temp.displayContents();
-			System.out.print(" " + temp.getJobNumber() + " -> ");
-		}
-	}
-
-	/*
-	static void printIOWaitQueue(){
-		//System.out.println("\nIOWaitQueue has:");
-		ReadyJob temp;
-		for (int i = 0; i < IOWaitQueue.size(); i++) {
-			temp = IOQueue.get(i);
-			temp.displayContents();
-			//System.out.print(" " + temp.getJobNumber() + " -> ");
-		}
-	}*/
-
-	static boolean oneJobOrLess(){
-		if(listReadyQue.size() < 2)
-			return true;
-		else
-			return false;
-	}
-    
-	static boolean inReadyQue(int jobNumber){
+    static boolean inReadyQue(int jobNumber){
 		ReadyJob temp;
 		for (int i = 0; i < listReadyQue.size(); i++) {
 			temp = listReadyQue.get(i);
@@ -334,7 +274,7 @@ class os {
 		}
 		return false;
 	}
-    ///////////////////////////////////////////
+
 	static boolean inWaitQue(int jobNumber){
 		ReadyJob temp;
 		for (int i = 0; i < waitingQueue.size(); i++) {
@@ -344,7 +284,7 @@ class os {
 		}
 		return false;
 	}
-    ///////////////////////////////////////////
+
 	static void addToReadyQueue(ReadyJob readyJob){
 		int i = 0;
 		while(i < listReadyQue.size()){
@@ -362,7 +302,7 @@ class os {
 		listReadyQue.add(readyJob);
 		readyJob.setIOLeftToDo(0);
 	}
-    ///////////////////////////////////////////
+
 	static void addToWaitingQueue(ReadyJob readyJob){
 		int i = 0;
 		while(i < waitingQueue.size()){
@@ -400,7 +340,6 @@ class os {
             jobToBeSwapped = listReadyQue.get(i);
 			remainingCPUTime = jobToBeSwapped.getRemainingCPUTime();
 			if (remainingCPUTime > maxCPUTIme && canFit(newJobSize, jobToBeSwapped.getJobNumber())){
-				System.out.println("\nfindAJobToSwap works");
                 return jobToBeSwapped;
 			}
 			else
@@ -408,30 +347,7 @@ class os {
 		}
 		return null;
 	}
-
-	/**
-	 * lookForIO method
-
-
-    static void lookForIO(){
-		//System.out.println("\nlookForIO :");
-        if(!IOWaitQueue.isEmpty() && !diskBusy){
-			//System.out.println("\nlookForIO 1:");
-            ReadyJob mJob = IOWaitQueue.get(0);
-
-            if(mJob != null && memoryList != null && memoryList.get(mJob.getJobNumber()) != null)
-            if(inReadyQue(mJob.getJobNumber()))
-            	if(memoryList.get(mJob.getJobNumber()).needsMoreIO() > 0) {
-				//System.out.println("\nlookForIO2: ");
-				sos.siodisk(mJob.getJobNumber());
-				jobToBeInIO = mJob.getJobNumber();
-				IOWaitQueue.pop();
-				diskBusy = true;
-			}
-        }
-    }
-	 */
-
+    
 	/**
 	 *canFit
 	 * 1. create a copy of MemoryList
@@ -462,8 +378,8 @@ class os {
 		}
 		return false;
     }
-
-
+    
+    
 	/**
 	 * sendAJobToDrum
 	 * 1. sends a job to drum to be placed into memory
@@ -477,11 +393,10 @@ class os {
 		if(!drumBusy) {
 			sos.siodrum(toBeSent.getJobNumber(), toBeSent.getJobSize(), toBeSent.getStartingAddress(), 0);
 			jobSentToDrum.add(toBeSent);
-			//System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
 			drumBusy = true;
 		}
 	}
-
+    
 	/**
 	 * sendAJobToDrum
 	 * 1. sends a job to drum to be placed into memory
@@ -496,11 +411,10 @@ class os {
 			sos.siodrum(p[1], p[3], address, 0);
 			ReadyJob job = new ReadyJob(p[1], p[2], p[3], p[4], p[5], address);
 			jobSentToDrum.add(job);
-			//System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
 			drumBusy = true;
 		}
 	}
-
+    
 	/**
 	 * sendAJobToDrum
 	 * if there is a job that fits in memory from waitingQueue, run it
@@ -508,7 +422,6 @@ class os {
 	 */
 	static void sendAJobToDrum(){
 		if(!drumBusy) {
-			//System.out.println("\nsendAJobToDrum: attempt");
 			ReadyJob job = pickFromWaitQueue();
 			if (job != null) {
 				if(!drumBusy) {
@@ -519,7 +432,7 @@ class os {
 			}
 		}
 	}
-
+    
 	/**
 	 * addAJobToWaitQueue
 	 * 1. creates a new job instance (called ReadyJob, not ready actually)
@@ -530,7 +443,7 @@ class os {
 		ReadyJob job = new ReadyJob(p[1], p[2], p[3], p[4], p[5]);
 		waitingQueue.add(job);
 	}
-
+    
 	/**
 	 * sendAJobToDisk
 	 * 1. send the first job in IOQueue to siodisk
@@ -541,9 +454,8 @@ class os {
 			sos.siodisk(IOQueue.getFirst());
 			diskBusy = true;
 		}
-		System.out.println("\nsendAJobToDisk: IOQueue is empty");
 	}
-
+    
 	/**
 	 * popAJobInIOQueue
 	 * 0. remove the first job from IOQueue
@@ -555,14 +467,14 @@ class os {
 	 *
 	 */
 	static void popAJobInIOQueue(){
-
+        
 		if(!IOQueue.isEmpty()) {
 			Integer jobFromIO = IOQueue.get(0);
 			IOQueue.remove(0);
-
+            
 			if (!isThereMoreIO(jobFromIO)) {
 				getReadyJob(jobFromIO).unblock();
-
+                
 				if(getReadyJob(jobFromIO).isWaitingForIOCompletion()) {
 					getReadyJob(jobFromIO).setWaitingForIOCompletion(false);
 					memoryList.remove(jobFromIO);
@@ -570,10 +482,10 @@ class os {
 					sendAJobToDrum();
 				}
 			}
-
+            
 		}
 	}
-
+    
 	/**
 	 * addAJobToReadyQueue
 	 * 1. places a job from jobSentToDrum to ReadyQueue in an appropriate space
@@ -581,7 +493,7 @@ class os {
 	 * 3. removes a job from jobSentToDrum
 	 */
 	static void addAJobToReadyQueue(){
-
+        
 		int i = 0;
 		while(i < listReadyQue.size()){
 			if(listReadyQue.get(i).getCPUTime() > jobSentToDrum.get(0).getCPUTime()) {
@@ -602,7 +514,7 @@ class os {
 		jobSentToDrum.getFirst().setInDrum();
 		jobSentToDrum.remove(0);
 	}
-
+    
 	/**
 	 * pickFromWaitQueue
 	 * 0. sort waitingQueue
@@ -632,7 +544,7 @@ class os {
 		}
 		return null;
 	}
-
+    
 	/**
 	 * isThereMoreIO
 	 * loops through the IOQueue to find a job that matches @param
@@ -652,7 +564,7 @@ class os {
 		}
 		return false;
 	}
-
+    
 	/**
 	 * sendAJobToSwapOut
 	 * 1. send it to drum
@@ -665,18 +577,17 @@ class os {
 		if(!drumBusy) {
 			sos.siodrum(toBeSwappedOut.getJobNumber(), toBeSwappedOut.getJobSize(), toBeSwappedOut.getStartingAddress(), 1);
 			jobToSwapOut.add(toBeSwappedOut);
-			System.out.println("\njobToBeSwapOut is job #" + toBeSwappedOut.getJobNumber());
 			toBeSwappedOut.outOfDrum();
 			drumBusy = true;
 		}
 	}
-
-
+    
+    
 	static void removeAJob(ReadyJob toBeRemoved){
 		memoryList.remove(toBeRemoved.getJobNumber());
 		removeReadyJob(toBeRemoved.getJobNumber());
 	}
-
+    
 	/**
 	 * swapOut
 	 * when there is a new job that doesn't originally fit in memory, try to see if it can swap some job out
@@ -685,12 +596,12 @@ class os {
 	 * @param maxCPUTime
 	 */
 	static void swapOut(int jobNumber, int jobSize, int maxCPUTime){
-			ReadyJob jobToSwapOut = findAJobToSwap(maxCPUTime, jobSize);
-			if(jobToSwapOut != null) {
-				sendAJobToSwapOut(jobToSwapOut);
-			}
+        ReadyJob jobToSwapOut = findAJobToSwap(maxCPUTime, jobSize);
+        if(jobToSwapOut != null) {
+            sendAJobToSwapOut(jobToSwapOut);
+        }
 	}
-
+    
 	/**
 	 * sortReadyJob
 	 * this should get called right before setAJobToRun starts to pick a job to run
@@ -700,13 +611,13 @@ class os {
 		ReadyJob temp;
 		int i, j;
 		boolean inorder;
-
+        
 		for(i = 1; i < listReadyQue.size(); i++){
 			inorder = false;
 			j = i;
-
+            
 			while(j != 0 && !inorder){
-
+                
 				if(listReadyQue.get(j).getRemainingCPUTime() < listReadyQue.get(j-1).getRemainingCPUTime()){
 					listReadyQue.add(j-1, listReadyQue.get(j));
 					listReadyQue.remove(j+1);
@@ -717,7 +628,7 @@ class os {
 			}
 		}
 	}
-
+    
 	/**
 	 * sortReadyJob
 	 * this should get called right before setAJobToRun starts to pick a job to run
@@ -727,13 +638,13 @@ class os {
 		ReadyJob temp;
 		int i, j;
 		boolean inorder;
-
+        
 		for(i = 1; i < waitingQueue.size(); i++){
 			inorder = false;
 			j = i;
-
+            
 			while(j != 0 && !inorder){
-
+                
 				if(waitingQueue.get(j).getRemainingCPUTime() < waitingQueue.get(j-1).getRemainingCPUTime()){
 					waitingQueue.add(j-1, waitingQueue.get(j));
 					waitingQueue.remove(j+1);
@@ -744,7 +655,7 @@ class os {
 			}
 		}
 	}
-
+    
 	static void takeOutIORequest(int jobNumber){
 		if(!IOQueue.isEmpty()){
 			int i = 0;
@@ -753,11 +664,11 @@ class os {
 					IOQueue.remove(i);
 				}
 				else
-				i++;
+                    i++;
 			}
 		}
 	}
-
+    
 	/**
 	 * countNumOfIOLeft
 	 * used to figure out how many IO it needs to be done later because this job has been swapped out
@@ -778,17 +689,13 @@ class os {
 		}
 		return 0;
 	}
-
+    
 	/**
 	 *add IO request for a waited job when it is placed back in memory
 	 * @param count
 	 */
 	static void addIO(int jobNumber, int count){
-		System.out.println("\naddIO works");
-		printIOQueue();
 		for(int i = 0; i< count; i++)
 			IOQueue.add(jobNumber);
-
-		printIOQueue();
-	}
+        }
 }
