@@ -1,3 +1,4 @@
+//ReadyJob holds all the job's info
 public class ReadyJob{
     private int jobNumber;
     private int jobSize;
@@ -42,19 +43,6 @@ public class ReadyJob{
         waitingForIOCompletion = false;
         IOLeftToDo = 0;
     }
-
-   /* public ReadyJob(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime, int usedCPUTime){
-        this.jobNumber = jobNumber;
-        this.priority = priority;
-        this.jobSize = jobSize;
-        this.CPUTime = maxCPUTime;
-        this.submissionTime = submissionTime;
-        blocked = false;
-        latched = false;
-        inDrum = false;
-        this.usedCPUTime = usedCPUTime;
-        timeLeftForSOS = -1;
-    }*/
 
     public int getIOLeftToDo() {
         return IOLeftToDo;
@@ -110,16 +98,6 @@ public class ReadyJob{
     public void unblock(){this.blocked = false;}
     public void setLatch(){this.latched = true;}
     public void unLatch(){this.latched = false;}
-
-
-
     public void setInDrum(){this.inDrum = true;}
     public void outOfDrum(){this.inDrum = false;}
-    
-    public void displayContents(){
-        System.out.println("/////////////////////////////////////////////////");
-        System.out.println("Job: " + this.jobNumber);
-        System.out.println("Size: " + this.jobSize);
-        System.out.println("remainingCPUTime " + this.getRemainingCPUTime());
-    }    
 }
