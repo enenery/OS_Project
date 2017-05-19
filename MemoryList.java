@@ -116,29 +116,24 @@ class MemoryList{
     public int add(int jobNum, int size){
     	//Declares an Iterator and starts a Memory tmp at the first value
     	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memIter.next();
-    	while(memIter!=null){
-    		//We check if there is an unoccupied spot that fits
-    		if(!tmp.isOccupied() && tmp.getSize() >= size){
-    			//We add the new Memory into the LinkedList
-    			memLst.add(memLst.indexOf(tmp),new Memory(jobNum,tmp.getLocation(),size,true));
-    			//We change the values of the free space
-    			tmp.setSize(tmp.getSize() - size);
-    			tmp.setStartAddr(tmp.getLocation() + size);
-    			//We remove any empty memory chunks
-    			clean();
-    			return tmp.getLocation()-size;
-    		}
-    		//We move to the next memory chunk
-    		try{
-    			tmp = memIter.next();
-    		}
-    		//The exception is called at the last value for an unidentifiable reason
-    		catch(Exception NoSuchElementException){
-    			return -1;
-    		}
-    	}
-		return -1;
+        boolean found = false;
+        Memory minMem = null;
+        for(Memory tmp : memLst){
+            if(!tmp.isOccupied() && tmp.getSize() >= size){
+                found = true;
+                minMem = tmp;
+            }
+            
+        }
+        if (found){
+            memLst.add(memLst.indexOf(minMem),new Memory(jobNum,minMem.getLocation(),size,true));
+            minMem.setSize(minMem.getSize() - size);
+            minMem.setStartAddr(minMem.getLocation() + size);
+            //We remove any empty memory chunks
+            clean();
+            return minMem.getLocation()-size;
+        }
+        return -1;
     }
     
     /**
@@ -154,40 +149,12 @@ class MemoryList{
     	while(memIter!=null){
     		//We check if the job number matches
     		if(tmp.getJobNumber() == jobNum){
-				//System.out.println("\n Memlist.remove:match");
-    			//we change the isOccupied flag to false
+				//we change the isOccupied flag to false
     			free(tmp);
     			//merge any adjacent free spaces
-				//System.out.println("\nremove: to be merged");
-    			//mergeMemory();
 				mergeAdjacent();
-                //displayContents();
-
-    			return;
+                return;
     		}
-    		try{
-    			tmp = memIter.next();
-    		}
-    		catch(Exception NoSuchElementException){
-    			return;
-    		}
-    	}
-    }
-    
-    /**
-     *Displays all contents in the list for debugging only
-     */
-    public void displayContents(){
-    	System.out.println("PRINTING...");
-    	ListIterator<Memory> memIter = memLst.listIterator();
-    	Memory tmp = memIter.next();
-    	while(memIter!=null){
-    		System.out.println("//////////////////////////////");
-    		System.out.println("Job: " + tmp.getJobNumber());
-    		System.out.println("Size: " + tmp.getSize());
-    		System.out.println("Start: " + tmp.getLocation());
-    		System.out.println("Occupied: " + tmp.isOccupied());
-    		System.out.println("//////////////////////////////");
     		try{
     			tmp = memIter.next();
     		}
