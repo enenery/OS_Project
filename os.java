@@ -1,4 +1,5 @@
 import java.util.*;
+//ToDo Find out where can I improve? currently having 344 jobs in with 294 jobs completed
 
 
 class os {
@@ -8,6 +9,7 @@ class os {
     private static LinkedList<Integer> IOQueue;
 	private static LinkedList<ReadyJob> jobSentToDrum;
 	private static LinkedList<ReadyJob> jobLeftForSOS;
+	private static LinkedList<ReadyJob> jobToSwapOut;
     private static boolean drumBusy;
 	private static boolean diskBusy;
     
@@ -18,9 +20,10 @@ class os {
         IOQueue = new LinkedList<Integer>();
 		jobSentToDrum = new LinkedList<ReadyJob>();
         jobLeftForSOS = new LinkedList<ReadyJob>();
+		jobToSwapOut = new LinkedList<ReadyJob>();
 		drumBusy = false;
 		diskBusy = false;
-		sos.ontrace();
+		//sos.ontrace();
 	}
 
 	/**
@@ -29,22 +32,28 @@ class os {
 	 * 1. yes -> 2. check if this new job fits in memory (okay, I don't actually like the add method in
 	 * MemoryList because it does two things in one method but I think I can deal with that.)
 	 * 2. yes -> (yes means memoryList.add(*) returned an int unequal -1)send this job to drum
-	 * 1 & 2. No -> push this new job into waitQueue
-	 * 3. set a job to run
-	 * ToDo if drum is not busy but this new job does not fit add a feature to look for another job in
-	 * ToDo waitingQueue that might fit, if it does, send it to Drum.
+	 * 1 & 2. No -> 3. A add this newJob to waitingQueue
+	 * 3. B check if possible, swap some job out
+	 * 4. set a job to run
+	 *
 	 * @param a
 	 * @param p
 	 */
 	static void Crint(int[] a, int[] p) {
         System.out.println("\nCRINT");
+        int jobNumber = p[1];
+        int jobSize = p[3];
+        int jobMaxCPUTime = p[5];
 
 		if(!drumBusy){
 			int startAddress =  memoryList.add(p[1], p[3]);
 			if(startAddress != -1)
 				sendAJobToDrum(p, startAddress);
 			else
+			{
 				addAJobToWaitQueue(p);
+				swapOut(jobNumber, jobSize, jobMaxCPUTime);
+			}
 		}
 		else{
 			addAJobToWaitQueue(p);
@@ -76,14 +85,11 @@ class os {
 		switch (a[0]) {
 			case 5:
                 if(!isThereMoreIO(p[1])) {
-					System.out.println("\n//////");
 					memoryList.remove(p[1]);
 					removeReadyJob(p[1]);
-					sendAJobToDrum();
 				}
-				else {
+				else
 					getReadyJob(p[1]).setWaitingForIOCompletion(true);
-				}
                 break;
 			case 6:
 				IOQueue.add(p[1]);
@@ -95,6 +101,7 @@ class os {
 				getReadyJob(p[1]).block();
 				break;
 		}
+		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
 
@@ -103,7 +110,7 @@ class os {
 	 * (for shortest remaining time next, if Tro gets called, it means it has used up the max CPU Time)
 	 * 0. check if this job needs more I/O
 	 * 0. No -> remove from memory, readyJobQueue, and jobLeftForSOS list
-	 * 0. Yes -> set waitingForIOCompletion to be true
+	 * 0. Yes -> set waitingForIOCompletion to be true (we cannot take this out of memory until all IO is done)
 	 * 1. remove this from jobLeftForSOS list, memory and readyQueue
 	 * 1.5 pick a job to send to drum, if possible
 	 * 2. set a job to run
@@ -115,14 +122,14 @@ class os {
 		ReadyJob job = jobLeftForSOS.getFirst();
 
 		if(!isThereMoreIO(job.getJobNumber())) {
-			memoryList.remove(job.getJobNumber());
-			removeReadyJob(job.getJobNumber());
+			removeAJob(job);
+			System.out.println("\nTro: Job #" + job.getJobNumber() + " is done completely");
 			jobLeftForSOS.remove(0);
 		}
 		else{
 			getReadyJob(job.getJobNumber()).setWaitingForIOCompletion(true);
-
 		}
+
 		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
@@ -141,13 +148,17 @@ class os {
 		diskBusy = false;
 		popAJobInIOQueue();
 		sendAJobToDisk();
+		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
     
 	/**
 	 * Drmint
+	 * -1. sets drumBusy = false;
+	 * 0. check if jobToSwapOut list is empty
+	 * 0. No -> A. add it to a waitingQueue && remove this job from memory, ReadyJobQueue and jobToSwapOut list
+	 * B. find a job to run in waitQueue
 	 * 1. set up this job to be placed in ReadyQueue
-	 * 1.5 sets drumBusy = false;
 	 * 2. try if there is any job in waitingQueue that can be placed into memory
 	 * 2. yes -> send it to drum
 	 * 3. set to run a job
@@ -157,12 +168,19 @@ class os {
 	static void Drmint(int[] a, int[] p){
 		System.out.println("\nDrmint");
 		drumBusy = false;
-		addAJobToReadyQueue();
 
-		ReadyJob job = pickFromWaitQueue();
-			if(job != null)
-				sendAJobToDrum(job);
+		if(!jobToSwapOut.isEmpty()){
+			// TODO: 5/18/2017 messy -> so when next time this job is placed into memory you have to
+			//todo put its IO request back into IO Queue
+			addToWaitingQueue(jobToSwapOut.getFirst());
+			removeAJob(jobToSwapOut.getFirst());
+			jobToSwapOut.remove(0);
 
+		}else {
+			addAJobToReadyQueue();
+		}
+
+		sendAJobToDrum();
 		setAJobToRun(a, p);
 	}
 
@@ -200,13 +218,14 @@ class os {
 		os_setUsedCPUTime(p[5]);
 
 		if (!listReadyQue.isEmpty()) {
+			sortReadyJob();
 			int i = 0;
 			while (i < listReadyQue.size()) {
 				ReadyJob jobToBeRun = listReadyQue.get(i);
 				if (!jobToBeRun.isBlocked() && jobToBeRun.isInDrum() && !jobToBeRun.isWaitingForIOCompletion()) {
 					jobLeftForSOS.add(jobToBeRun);
 					jobToBeRun.setTimeLeftForSOS(p[5]);
-					System.out.println("\nsetAJobToRun: We are going to run a job #" +jobToBeRun.getJobNumber());
+					//System.out.println("\nsetAJobToRun: We are going to run a job #" +jobToBeRun.getJobNumber());
 					runReadyJob(jobToBeRun, a, p);
 					return;
 				} else {
@@ -270,6 +289,13 @@ class os {
 			//System.out.println("next -> ");
 		}
 	}
+
+	static void printIOQueue(){
+		System.out.println("\nIOQueue has:");
+		for (int i = 0; i < IOQueue.size(); i++)
+			System.out.print(IOQueue.get(i)+ " -> ");
+
+	}
     
 	static void printWaitQue(){
 		//System.out.println("\nWaitQue has:");
@@ -323,12 +349,18 @@ class os {
 		int i = 0;
 		while(i < listReadyQue.size()){
 			if(listReadyQue.get(i).getCPUTime() > readyJob.getCPUTime()) {
+				if(readyJob.getIOLeftToDo() > 0)
+					addIO(readyJob.getJobNumber(), readyJob.getIOLeftToDo());
 				listReadyQue.add(i, readyJob);
+				readyJob.setIOLeftToDo(0);
 				return;
 			}
 			i++;
 		}
+		if(readyJob.getIOLeftToDo() > 0)
+			addIO(readyJob.getJobNumber(), readyJob.getIOLeftToDo());
 		listReadyQue.add(readyJob);
+		readyJob.setIOLeftToDo(0);
 	}
     ///////////////////////////////////////////
 	static void addToWaitingQueue(ReadyJob readyJob){
@@ -355,26 +387,28 @@ class os {
 	}
     
 	/**
-	 * returns a job in memory that has a larger remaining CPU time than the newly arrived job's max CPU time
-	 * @param a
-	 * @param p
+	 * findAJobToSwap
+	 * returns a job in memory that has a larger remaining CPU time than another job
+	 * ToDO not entirely clear on the use of canFit function here
 	 * @return
-
-	static ReadyJob findAJobToSwap(int a[], int p[], int newJobSize) {
+	 */
+	static ReadyJob findAJobToSwap(int maxCPUTIme, int newJobSize) {
 		int remainingCPUTime = 0;
-		ReadyJob jobToBeSwapped = BAD_JOB;
+		ReadyJob jobToBeSwapped;
 		int i = 0;
 		while (i < listReadyQue.size()) {
             jobToBeSwapped = listReadyQue.get(i);
-			remainingCPUTime = jobToBeSwapped.getCPUTime() - jobToBeSwapped.getUsedCPUTime();
-			if (remainingCPUTime > p[4] && canFit(newJobSize, jobToBeSwapped.getJobNumber()) && !jobToBeSwapped.isLatched())
+			remainingCPUTime = jobToBeSwapped.getRemainingCPUTime();
+			if (remainingCPUTime > maxCPUTIme && canFit(newJobSize, jobToBeSwapped.getJobNumber())){
+				System.out.println("\nfindAJobToSwap works");
                 return jobToBeSwapped;
+			}
 			else
                 i++;
 		}
-		return BAD_JOB;
+		return null;
 	}
-*/
+
 	/**
 	 * lookForIO method
 
@@ -398,14 +432,33 @@ class os {
     }
 	 */
 
-    static boolean canFit(int size, int jobNum){
+	/**
+	 *canFit
+	 * 1. create a copy of MemoryList
+	 * 2. if not empty, check if the jobNumToRemove is latched -> if yes -> return null, don't swap it out
+	 * 3. check if this job has more IO to do ->  todo in fixing
+	 * ToDo fix lazy programming here
+	 * @param sizeOfNewJob
+	 * @param jobNumToRemove
+	 * @return
+	 */
+    static boolean canFit(int sizeOfNewJob, int jobNumToRemove){
         MemoryList tmp = memoryList.copy(memoryList);
-        //tmp = new MemoryList(memoryList);
         if(!tmp.isEmpty()) {
-			tmp.remove(jobNum);
-			if (tmp.add(-1, size) != -1)
+        	if(!IOQueue.isEmpty()){
+        		if(jobNumToRemove == IOQueue.get(0))
+        			return false;
+			}
+			tmp.remove(jobNumToRemove);
+			if (tmp.add(-1, sizeOfNewJob) != -1){
+				if(isThereMoreIO(jobNumToRemove)){
+					getReadyJob(jobNumToRemove).setIOLeftToDo(countNumOfIOLeft(jobNumToRemove));
+					takeOutIORequest(jobNumToRemove);
+				}
 				return true;
-			else return false;
+			}
+			else
+				return false;
 		}
 		return false;
     }
@@ -421,10 +474,12 @@ class os {
 	 * @param toBeSent
 	 */
 	static void sendAJobToDrum(ReadyJob toBeSent){
-		sos.siodrum(toBeSent.getJobNumber(), toBeSent.getJobSize(), toBeSent.getStartingAddress(), 0);
-		jobSentToDrum.add(toBeSent);
-		//System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
-		drumBusy = true;
+		if(!drumBusy) {
+			sos.siodrum(toBeSent.getJobNumber(), toBeSent.getJobSize(), toBeSent.getStartingAddress(), 0);
+			jobSentToDrum.add(toBeSent);
+			//System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
+			drumBusy = true;
+		}
 	}
 
 	/**
@@ -437,11 +492,13 @@ class os {
 	 * @param p
 	 */
 	static void sendAJobToDrum(int p[], int address){
-		sos.siodrum(p[1], p[3], address, 0);
-		ReadyJob job = new ReadyJob(p[1], p[2], p[3], p[4], p[5], address);
-		jobSentToDrum.add(job);
-		//System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
-		drumBusy = true;
+		if(!drumBusy) {
+			sos.siodrum(p[1], p[3], address, 0);
+			ReadyJob job = new ReadyJob(p[1], p[2], p[3], p[4], p[5], address);
+			jobSentToDrum.add(job);
+			//System.out.println("\njobToBeInDrum is job #" + jobToBeInDrum + " is added to ReadyQue with starting address at " + toBeSent.getStartingAddress());
+			drumBusy = true;
+		}
 	}
 
 	/**
@@ -451,11 +508,14 @@ class os {
 	 */
 	static void sendAJobToDrum(){
 		if(!drumBusy) {
+			//System.out.println("\nsendAJobToDrum: attempt");
 			ReadyJob job = pickFromWaitQueue();
 			if (job != null) {
-				sos.siodrum(job.getJobNumber(), job.getJobSize(), job.getStartingAddress(), 0);
-				jobSentToDrum.add(job);
-				drumBusy = true;
+				if(!drumBusy) {
+					sos.siodrum(job.getJobNumber(), job.getJobSize(), job.getStartingAddress(), 0);
+					jobSentToDrum.add(job);
+					drumBusy = true;
+				}
 			}
 		}
 	}
@@ -481,6 +541,7 @@ class os {
 			sos.siodisk(IOQueue.getFirst());
 			diskBusy = true;
 		}
+		System.out.println("\nsendAJobToDisk: IOQueue is empty");
 	}
 
 	/**
@@ -524,28 +585,37 @@ class os {
 		int i = 0;
 		while(i < listReadyQue.size()){
 			if(listReadyQue.get(i).getCPUTime() > jobSentToDrum.get(0).getCPUTime()) {
+				if(jobSentToDrum.get(0).getIOLeftToDo() > 0)
+					addIO(jobSentToDrum.get(0).getJobNumber(), jobSentToDrum.get(0).getIOLeftToDo());
 				listReadyQue.add(i, jobSentToDrum.get(0));
+				jobSentToDrum.get(0).setIOLeftToDo(0);
 				jobSentToDrum.getFirst().setInDrum();
 				jobSentToDrum.remove(0);
 				return;
 			}
 			i++;
 		}
+		if(jobSentToDrum.get(0).getIOLeftToDo() > 0)
+			addIO(jobSentToDrum.get(0).getJobNumber(), jobSentToDrum.get(0).getIOLeftToDo());
 		listReadyQue.add(jobSentToDrum.get(0));
+		jobSentToDrum.get(0).setIOLeftToDo(0);
 		jobSentToDrum.getFirst().setInDrum();
 		jobSentToDrum.remove(0);
 	}
 
 	/**
 	 * pickFromWaitQueue
+	 * 0. sort waitingQueue
 	 * 1. traverse a waitingQueue to see if there is any job that fits in memory
 	 * 2. if there is a job that fits, set its starting address to one it just received
 	 * 2. and also remove this job from waitingQueue
+	 * 2. -> if it doesn't try to find a job to swapOut
 	 * 3. returns a job that if it fits in memory; otherwise returns null
 	 * @return readyJob
 	 */
 	static ReadyJob pickFromWaitQueue(){
 		if(!waitingQueue.isEmpty()){
+			sortWaitingQueue();
 			int i = 0;
 			while (i < waitingQueue.size()) {
 				ReadyJob waitingJob = waitingQueue.get(i);
@@ -554,6 +624,8 @@ class os {
 					waitingJob.setStartingAddress(startAddress);
 					waitingQueue.remove(waitingJob);
 					return waitingJob;
+				}else{
+					swapOut(waitingJob.getJobNumber(), waitingJob.getJobSize(), waitingJob.getRemainingCPUTime());
 				}
 				i++;
 			}
@@ -581,15 +653,142 @@ class os {
 		return false;
 	}
 
-	/*
+	/**
+	 * sendAJobToSwapOut
+	 * 1. send it to drum
+	 * 2. add it to jobToSwapOut list
+	 * 3. set this job's inDrum = false;
+	 * 3. set drumBusy = true
+	 * @param toBeSwappedOut
+	 */
 	static void sendAJobToSwapOut(ReadyJob toBeSwappedOut){
-		addToWaitingQueue(toBeSwappedOut);
-    	removeReadyJob(toBeSwappedOut.getJobNumber());
-		sos.siodrum(toBeSwappedOut.getJobNumber(), toBeSwappedOut.getJobSize(), toBeSwappedOut.getStartingAddress(), 1);
-		swappingIn = false;
-		jobToBeSwappedOut = toBeSwappedOut.getJobNumber();
-		//System.out.println("\njobToBeSwapOut is job #" + jobToBeSwappedOut);
-		drumBusy = true;
+		if(!drumBusy) {
+			sos.siodrum(toBeSwappedOut.getJobNumber(), toBeSwappedOut.getJobSize(), toBeSwappedOut.getStartingAddress(), 1);
+			jobToSwapOut.add(toBeSwappedOut);
+			System.out.println("\njobToBeSwapOut is job #" + toBeSwappedOut.getJobNumber());
+			toBeSwappedOut.outOfDrum();
+			drumBusy = true;
+		}
 	}
-	*/
+
+
+	static void removeAJob(ReadyJob toBeRemoved){
+		memoryList.remove(toBeRemoved.getJobNumber());
+		removeReadyJob(toBeRemoved.getJobNumber());
+	}
+
+	/**
+	 * swapOut
+	 * when there is a new job that doesn't originally fit in memory, try to see if it can swap some job out
+	 * @param jobNumber
+	 * @param jobSize
+	 * @param maxCPUTime
+	 */
+	static void swapOut(int jobNumber, int jobSize, int maxCPUTime){
+			ReadyJob jobToSwapOut = findAJobToSwap(maxCPUTime, jobSize);
+			if(jobToSwapOut != null) {
+				sendAJobToSwapOut(jobToSwapOut);
+			}
+	}
+
+	/**
+	 * sortReadyJob
+	 * this should get called right before setAJobToRun starts to pick a job to run
+	 * it uses insertion sorting algorithm
+	 */
+	static void sortReadyJob(){
+		ReadyJob temp;
+		int i, j;
+		boolean inorder;
+
+		for(i = 1; i < listReadyQue.size(); i++){
+			inorder = false;
+			j = i;
+
+			while(j != 0 && !inorder){
+
+				if(listReadyQue.get(j).getRemainingCPUTime() < listReadyQue.get(j-1).getRemainingCPUTime()){
+					listReadyQue.add(j-1, listReadyQue.get(j));
+					listReadyQue.remove(j+1);
+					j--;
+				}
+				else
+					inorder = true;
+			}
+		}
+	}
+
+	/**
+	 * sortReadyJob
+	 * this should get called right before setAJobToRun starts to pick a job to run
+	 * it uses insertion sorting algorithm
+	 */
+	static void sortWaitingQueue(){
+		ReadyJob temp;
+		int i, j;
+		boolean inorder;
+
+		for(i = 1; i < waitingQueue.size(); i++){
+			inorder = false;
+			j = i;
+
+			while(j != 0 && !inorder){
+
+				if(waitingQueue.get(j).getRemainingCPUTime() < waitingQueue.get(j-1).getRemainingCPUTime()){
+					waitingQueue.add(j-1, waitingQueue.get(j));
+					waitingQueue.remove(j+1);
+					j--;
+				}
+				else
+					inorder = true;
+			}
+		}
+	}
+
+	static void takeOutIORequest(int jobNumber){
+		if(!IOQueue.isEmpty()){
+			int i = 0;
+			while (i < IOQueue.size()) {
+				if (IOQueue.get(i) == jobNumber) {
+					IOQueue.remove(i);
+				}
+				else
+				i++;
+			}
+		}
+	}
+
+	/**
+	 * countNumOfIOLeft
+	 * used to figure out how many IO it needs to be done later because this job has been swapped out
+	 * @param jobNumber
+	 * @return
+	 */
+	static int countNumOfIOLeft(int jobNumber){
+		if(!IOQueue.isEmpty()){
+			int count = 0;
+			int i = 0;
+			while (i < IOQueue.size()) {
+				if (IOQueue.get(i).equals(jobNumber)) {
+					count++;
+				}
+				i++;
+			}
+			return count;
+		}
+		return 0;
+	}
+
+	/**
+	 *add IO request for a waited job when it is placed back in memory
+	 * @param count
+	 */
+	static void addIO(int jobNumber, int count){
+		System.out.println("\naddIO works");
+		printIOQueue();
+		for(int i = 0; i< count; i++)
+			IOQueue.add(jobNumber);
+
+		printIOQueue();
+	}
 }

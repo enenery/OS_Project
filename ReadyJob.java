@@ -11,6 +11,7 @@ public class ReadyJob{
     private boolean latched;
     private int timeLeftForSOS;
     private boolean waitingForIOCompletion;
+    private int IOLeftToDo;
 
     public ReadyJob(int jobNumber,int priority, int jobSize, int maxCPUTime,int submissionTime, int startingAddress){
         this.jobNumber = jobNumber;
@@ -25,6 +26,7 @@ public class ReadyJob{
         inDrum = false;
         timeLeftForSOS = -1;
         waitingForIOCompletion = false;
+        IOLeftToDo = 0;
     }
     
     public ReadyJob(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime){
@@ -38,6 +40,7 @@ public class ReadyJob{
         inDrum = false;
         timeLeftForSOS = -1;
         waitingForIOCompletion = false;
+        IOLeftToDo = 0;
     }
 
    /* public ReadyJob(int jobNumber, int priority, int jobSize, int maxCPUTime, int submissionTime, int usedCPUTime){
@@ -52,7 +55,15 @@ public class ReadyJob{
         this.usedCPUTime = usedCPUTime;
         timeLeftForSOS = -1;
     }*/
-    
+
+    public int getIOLeftToDo() {
+        return IOLeftToDo;
+    }
+
+    public void setIOLeftToDo(int IOLeftToDo) {
+        this.IOLeftToDo = IOLeftToDo;
+    }
+
     public ReadyJob(){
         this.jobNumber = -1;
         this.jobSize = -1;
@@ -61,6 +72,8 @@ public class ReadyJob{
         this.usedCPUTime = -1;
         timeLeftForSOS = -1;
         waitingForIOCompletion = false;
+
+        IOLeftToDo = 0;
     }
 
     public boolean isWaitingForIOCompletion() {
@@ -107,10 +120,6 @@ public class ReadyJob{
         System.out.println("/////////////////////////////////////////////////");
         System.out.println("Job: " + this.jobNumber);
         System.out.println("Size: " + this.jobSize);
-        System.out.println("Blocked " + this.blocked);
-        System.out.println("Latched " + this.latched);
-        System.out.println("InDrum " + this.inDrum);
-        System.out.println("usedCPUTime " + this.usedCPUTime);
-        System.out.println("startingAddress " + this.startingAddress);
+        System.out.println("remainingCPUTime " + this.getRemainingCPUTime());
     }    
 }
